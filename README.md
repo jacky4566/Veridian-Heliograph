@@ -5,14 +5,11 @@ Using 2 independent solar charging circuits the Heliograph seeks to always provi
 The whole device is cast in water clear epoxy, no ports, no holes, no batteries. Just a robust device that will provide a GPS position whenever outside.
 
 ## Who wants it?
-- Offshore Nearshore Sailors
-- Outdoorsmen
-- Overlanders
+Offshore Nearshore Sailors
+Outdoorsmen
+Overlanders
 
-## Expected life
-TBD
-
-## Tech Features
+## Features
 - Duel MPPT solar chargers feed from high effiency solar panels
 - 10F of supercap energy storage
 - TI nano-power Buck-Boost
