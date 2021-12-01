@@ -1177,17 +1177,6 @@ F 3 "" H 10750 4775 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L power:GND #PWR0121
-U 1 1 61AA59EA
-P 10750 4475
-F 0 "#PWR0121" H 10750 4225 50  0001 C CNN
-F 1 "GND" H 10755 4302 50  0000 C CNN
-F 2 "" H 10750 4475 50  0001 C CNN
-F 3 "" H 10750 4475 50  0001 C CNN
-	1    10750 4475
-	0    1    1    0   
-$EndComp
-$Comp
 L power:GND #PWR0120
 U 1 1 61AA5805
 P 12350 4275
@@ -1222,39 +1211,6 @@ F 3 "~" H 9675 3725 50  0001 C CNN
 F 4 "LTST-S270CKT" H 9675 3725 50  0001 C CNN "Part"
 	1    9675 3725
 	0    1    -1   0   
-$EndComp
-$Comp
-L power:GND #PWR0118
-U 1 1 61C248C7
-P 12350 2075
-F 0 "#PWR0118" H 12350 1825 50  0001 C CNN
-F 1 "GND" H 12355 1902 50  0000 C CNN
-F 2 "" H 12350 2075 50  0001 C CNN
-F 3 "" H 12350 2075 50  0001 C CNN
-	1    12350 2075
-	0    -1   -1   0   
-$EndComp
-$Comp
-L power:GND #PWR0117
-U 1 1 61C22D24
-P 12350 3175
-F 0 "#PWR0117" H 12350 2925 50  0001 C CNN
-F 1 "GND" H 12355 3002 50  0000 C CNN
-F 2 "" H 12350 3175 50  0001 C CNN
-F 3 "" H 12350 3175 50  0001 C CNN
-	1    12350 3175
-	0    -1   -1   0   
-$EndComp
-$Comp
-L power:GND #PWR0116
-U 1 1 61C21CD9
-P 12350 5275
-F 0 "#PWR0116" H 12350 5025 50  0001 C CNN
-F 1 "GND" H 12355 5102 50  0000 C CNN
-F 2 "" H 12350 5275 50  0001 C CNN
-F 3 "" H 12350 5275 50  0001 C CNN
-	1    12350 5275
-	0    -1   -1   0   
 $EndComp
 $Comp
 L power:GND #PWR0115
@@ -1371,11 +1327,11 @@ F 7 "STMicroelectronics" H 11550 3675 50  0001 L BNN "MANUFACTURER"
 	1    11550 3675
 	1    0    0    -1  
 $EndComp
-Text GLabel 10750 2975 0    50   Input ~ 0
+Text GLabel 10750 2875 0    50   Input ~ 0
 SOLAR_SENSE2
 Text GLabel 12350 2675 2    50   Input ~ 0
 GPSEN
-Text GLabel 10750 3675 0    50   Input ~ 0
+Text GLabel 10750 5275 0    50   Input ~ 0
 DISP_EN
 Text GLabel 12350 1975 2    50   Input ~ 0
 DISP_CS
@@ -1391,7 +1347,7 @@ NoConn ~ 10175 2275
 NoConn ~ 9675 2275
 Wire Wire Line
 	10175 1975 10750 1975
-Text GLabel 12350 2775 2    50   Input ~ 0
+Text GLabel 10750 4475 0    50   Input ~ 0
 LED
 Text GLabel 9675 3375 1    50   Input ~ 0
 LED
@@ -1449,11 +1405,11 @@ F 3 "~" H 10175 2475 50  0001 C CNN
 $EndComp
 Text GLabel 12350 1875 2    50   Input ~ 0
 EXTCOMIN
-Text GLabel 10750 2875 0    50   Input ~ 0
+Text GLabel 10750 2975 0    50   Input ~ 0
 SOLAR_SENSE1
 Text GLabel 10750 3075 0    50   Input ~ 0
 VBAT_SENSE
-Text GLabel 10750 3775 0    50   Input ~ 0
+Text GLabel 10750 3575 0    50   Input ~ 0
 GPS_EXINT
 Text GLabel 12350 2575 2    50   Input ~ 0
 GPS_UART_MOSI
@@ -1546,7 +1502,7 @@ NoConn ~ 8450 2800
 NoConn ~ 8450 2900
 Text GLabel 7450 3100 0    50   Input ~ 0
 LIS_CS
-Text GLabel 10750 3575 0    50   Input ~ 0
+Text GLabel 10750 3675 0    50   Input ~ 0
 LIS_CS
 Text GLabel 8050 2300 1    50   Input ~ 0
 VDD
@@ -1601,17 +1557,17 @@ F 3 "https://www.st.com/resource/en/datasheet/cd00274221.pdf" H 7750 2700 50  00
 	1    7950 2800
 	1    0    0    -1  
 $EndComp
-Text GLabel 10750 4375 0    50   Input ~ 0
+Text GLabel 10750 3775 0    50   Input ~ 0
 LIS_INT
 Text GLabel 12350 3275 2    50   Input ~ 0
 SPI_CLK
 Text GLabel 8775 5175 1    50   Input ~ 0
 DISP_EN
 $Comp
-L power:GND #PWR?
+L power:GND #PWR0128
 U 1 1 61C00045
 P 8775 5550
-F 0 "#PWR?" H 8775 5300 50  0001 C CNN
+F 0 "#PWR0128" H 8775 5300 50  0001 C CNN
 F 1 "GND" H 8780 5377 50  0000 C CNN
 F 2 "" H 8775 5550 50  0001 C CNN
 F 3 "" H 8775 5550 50  0001 C CNN
@@ -1637,4 +1593,15 @@ Text Notes 7075 6600 0    197  ~ 39
 MECHANICAL
 Wire Notes Line
 	9275 6125 6725 6125
+$Comp
+L power:GND #PWR0116
+U 1 1 61B71588
+P 12350 2075
+F 0 "#PWR0116" H 12350 1825 50  0001 C CNN
+F 1 "GND" H 12355 1902 50  0000 C CNN
+F 2 "" H 12350 2075 50  0001 C CNN
+F 3 "" H 12350 2075 50  0001 C CNN
+	1    12350 2075
+	0    -1   -1   0   
+$EndComp
 $EndSCHEMATC
