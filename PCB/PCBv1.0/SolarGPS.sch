@@ -80,52 +80,52 @@ Text GLabel 5275 1775 1    50   Input ~ 0
 SOLAR+
 Text GLabel 5000 1975 1    50   Input ~ 0
 SOLAR_SENSE1
-Connection ~ 1750 1600
+Connection ~ 1900 1425
 $Comp
 L Device:C_Small C24
 U 1 1 5FA4FE7E
-P 1750 1700
-F 0 "C24" H 1850 1725 50  0000 L CNN
-F 1 "1uF" H 1842 1655 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0603_1608Metric" H 1750 1700 50  0001 C CNN
-F 3 "~" H 1750 1700 50  0001 C CNN
-	1    1750 1700
+P 1900 1525
+F 0 "C24" H 2000 1550 50  0000 L CNN
+F 1 "1uF" H 1992 1480 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 1900 1525 50  0001 C CNN
+F 3 "~" H 1900 1525 50  0001 C CNN
+	1    1900 1525
 	1    0    0    -1  
 $EndComp
-Text GLabel 2050 3025 0    50   Input ~ 0
+Text GLabel 1675 3175 0    50   Input ~ 0
 GPS_EXINT
 $Comp
 L power:GND #PWR015
 U 1 1 5FA4E6CF
-P 2650 3525
-F 0 "#PWR015" H 2650 3275 50  0001 C CNN
-F 1 "GND" H 2655 3352 50  0000 C CNN
-F 2 "" H 2650 3525 50  0001 C CNN
-F 3 "" H 2650 3525 50  0001 C CNN
-	1    2650 3525
+P 2275 3675
+F 0 "#PWR015" H 2275 3425 50  0001 C CNN
+F 1 "GND" H 2280 3502 50  0000 C CNN
+F 2 "" H 2275 3675 50  0001 C CNN
+F 3 "" H 2275 3675 50  0001 C CNN
+	1    2275 3675
 	1    0    0    -1  
 $EndComp
 $Comp
 L RF_GPS:MAX-M8Q U2
 U 1 1 6017075D
-P 2650 2825
-F 0 "U2" H 3225 3400 50  0000 C CNN
-F 1 "MAX-M10Q" H 3350 3300 50  0000 C CNN
-F 2 "RF_GPS:ublox_MAX" H 3050 2175 50  0001 C CNN
-F 3 "https://www.u-blox.com/sites/default/files/MAX-M8-FW3_DataSheet_%28UBX-15031506%29.pdf" H 2650 2825 50  0001 C CNN
-	1    2650 2825
+P 2275 2975
+F 0 "U2" H 2850 3550 50  0000 C CNN
+F 1 "MAX-M10Q" H 2975 3450 50  0000 C CNN
+F 2 "RF_GPS:ublox_MAX" H 2675 2325 50  0001 C CNN
+F 3 "https://www.u-blox.com/sites/default/files/MAX-M8-FW3_DataSheet_%28UBX-15031506%29.pdf" H 2275 2975 50  0001 C CNN
+	1    2275 2975
 	1    0    0    -1  
 $EndComp
-NoConn ~ 2050 2725
-NoConn ~ 2050 2825
-NoConn ~ 2050 3125
-NoConn ~ 2050 3225
-NoConn ~ 3250 3125
-NoConn ~ 3250 2625
-NoConn ~ 2850 2125
-Text GLabel 2050 2425 0    50   Input ~ 0
+NoConn ~ 1675 2875
+NoConn ~ 1675 2975
+NoConn ~ 1675 3275
+NoConn ~ 1675 3375
+NoConn ~ 2875 3275
+NoConn ~ 2875 2775
+NoConn ~ 2475 2275
+Text GLabel 1675 2575 0    50   Input ~ 0
 GPS_UART_MOSI
-Text GLabel 2050 2525 0    50   Input ~ 0
+Text GLabel 1675 2675 0    50   Input ~ 0
 GPS_UART_MISO
 Wire Wire Line
 	4300 7375 4300 7750
@@ -142,10 +142,10 @@ F 3 "~" H 4425 7650 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	4425 7550 4425 7050
-Text GLabel 875  1600 0    50   Input ~ 0
+Text GLabel 1025 1425 0    50   Input ~ 0
 VDD
 Wire Wire Line
-	1675 1600 1750 1600
+	1825 1425 1900 1425
 $Comp
 L Connector:Conn_01x10_Female J1
 U 1 1 61A063D0
@@ -173,7 +173,7 @@ Connection ~ 8000 5375
 Text GLabel 7500 5375 1    50   Input ~ 0
 SPI_MOSI
 Wire Wire Line
-	3250 2825 3550 2825
+	2875 2975 3200 2975
 Wire Wire Line
 	5675 3150 5950 3150
 Connection ~ 5950 3350
@@ -229,25 +229,25 @@ $EndComp
 $Comp
 L Analog_Switch:MAX40200AUK U3
 U 1 1 61BA8BAE
-P 1275 1700
-F 0 "U3" H 1475 2075 50  0000 C CNN
-F 1 "MAX40200AUK" H 1275 1976 50  0000 C CNN
-F 2 "Package_TO_SOT_SMD:SOT-23-5" H 1275 2200 50  0001 C CNN
-F 3 "https://datasheets.maximintegrated.com/en/ds/MAX40200.pdf" H 1275 2200 50  0001 C CNN
-	1    1275 1700
+P 1425 1525
+F 0 "U3" H 1625 1900 50  0000 C CNN
+F 1 "MAX40200AUK" H 1425 1801 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-23-5" H 1425 2025 50  0001 C CNN
+F 3 "https://datasheets.maximintegrated.com/en/ds/MAX40200.pdf" H 1425 2025 50  0001 C CNN
+	1    1425 1525
 	1    0    0    -1  
 $EndComp
-Text GLabel 875  1800 0    50   Input ~ 0
+Text GLabel 1025 1625 0    50   Input ~ 0
 GPSEN
 $Comp
 L power:GND #PWR06
 U 1 1 61BB7ABB
-P 1275 2000
-F 0 "#PWR06" H 1275 1750 50  0001 C CNN
-F 1 "GND" H 1280 1827 50  0000 C CNN
-F 2 "" H 1275 2000 50  0001 C CNN
-F 3 "" H 1275 2000 50  0001 C CNN
-	1    1275 2000
+P 1425 1825
+F 0 "#PWR06" H 1425 1575 50  0001 C CNN
+F 1 "GND" H 1430 1652 50  0000 C CNN
+F 2 "" H 1425 1825 50  0001 C CNN
+F 3 "" H 1425 1825 50  0001 C CNN
+	1    1425 1825
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -320,28 +320,29 @@ F 3 "~" H 1825 4700 50  0001 C CNN
 	1    1825 4700
 	0    1    -1   0   
 $EndComp
-Text Label 3250 2825 0    50   ~ 0
+Text Label 2875 2975 0    50   ~ 0
 GPS_RF
 $Comp
 L Device:Antenna_Shield AE1
 U 1 1 61D38EF7
-P 3550 2625
-F 0 "AE1" H 3694 2664 50  0000 L CNN
-F 1 "Antenna_Shield" H 3694 2573 50  0000 L CNN
-F 2 "Margo_Lib:LINX_CONSMA002-SMD" H 3550 2725 50  0001 C CNN
-F 3 "~" H 3550 2725 50  0001 C CNN
-	1    3550 2625
+P 3350 2775
+F 0 "AE1" H 3494 2814 50  0000 L CNN
+F 1 "Antenna_Shield" H 3494 2723 50  0000 L CNN
+F 2 "RF_Antenna:Pulse_W3011" H 3350 2875 50  0001 C CNN
+F 3 "~" H 3350 2875 50  0001 C CNN
+F 4 "W3011A" H 3350 2775 50  0001 C CNN "Part"
+	1    3350 2775
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR0101
 U 1 1 61D3AA3F
-P 3650 2825
-F 0 "#PWR0101" H 3650 2575 50  0001 C CNN
-F 1 "GND" H 3655 2652 50  0000 C CNN
-F 2 "" H 3650 2825 50  0001 C CNN
-F 3 "" H 3650 2825 50  0001 C CNN
-	1    3650 2825
+P 3450 3175
+F 0 "#PWR0101" H 3450 2925 50  0001 C CNN
+F 1 "GND" H 3455 3002 50  0000 C CNN
+F 2 "" H 3450 3175 50  0001 C CNN
+F 3 "" H 3450 3175 50  0001 C CNN
+	1    3450 3175
 	-1   0    0    -1  
 $EndComp
 $Comp
@@ -357,7 +358,7 @@ F 3 "~" H 8775 5275 50  0001 C CNN
 $EndComp
 Text GLabel 8000 5375 1    50   Input ~ 0
 VDD
-Text Label 2075 1600 0    50   ~ 0
+Text Label 1925 1425 0    50   ~ 0
 GPSVCC
 Text GLabel 7400 5375 1    50   Input ~ 0
 SPI_CLK
@@ -856,19 +857,18 @@ Wire Notes Line
 	6900 475  6750 475 
 Connection ~ 5200 5575
 Wire Wire Line
-	2450 2125 2450 1600
-Connection ~ 2450 1600
+	2075 2275 2075 1425
 Wire Wire Line
-	2450 1600 2550 1600
+	2075 1425 2175 1425
 Wire Wire Line
-	2550 2125 2550 1600
-Text GLabel 2650 2125 1    50   Input ~ 0
+	2175 2275 2175 1425
+Text GLabel 2275 2275 1    50   Input ~ 0
 VDD
 Wire Wire Line
-	1275 2000 1750 2000
+	1425 1825 1900 1825
 Wire Wire Line
-	1750 2000 1750 1800
-Connection ~ 1275 2000
+	1900 1825 1900 1625
+Connection ~ 1425 1825
 Text GLabel 12350 975  2    50   Input ~ 0
 VDD
 Connection ~ 12350 1175
@@ -1199,7 +1199,7 @@ F 3 "" H 7875 7375 50  0001 C CNN
 	-1   0    0    -1  
 $EndComp
 Wire Wire Line
-	1750 1600 2450 1600
+	1900 1425 2075 1425
 $Comp
 L Device:C_Small C25
 U 1 1 61A1AA0E
@@ -1406,4 +1406,24 @@ Wire Wire Line
 Connection ~ 1350 5425
 Text Label 1350 6050 1    50   ~ 0
 SOLAR+
+$Comp
+L Device:C_Small C1
+U 1 1 61AA34D0
+P 3200 3075
+F 0 "C1" H 3000 3050 50  0000 C CNN
+F 1 "3.3pF" H 3000 3125 50  0000 C CNN
+F 2 "Capacitor_SMD:C_0402_1005Metric" H 3200 3075 50  0001 C CNN
+F 3 "~" H 3200 3075 50  0001 C CNN
+	1    3200 3075
+	1    0    0    1   
+$EndComp
+Connection ~ 2075 1425
+Connection ~ 3200 2975
+Wire Wire Line
+	3200 2975 3350 2975
+Wire Wire Line
+	3200 3175 3450 3175
+Wire Wire Line
+	3450 3175 3450 2975
+Connection ~ 3450 3175
 $EndSCHEMATC
