@@ -1,0 +1,18 @@
+Configuration:
+- BLE, Connectable with DFU and Waypoint set. Data download?
+Advertising with Stop 2(2)
+(Tx = 0 dBm; Period 1.28 s; 31 bytes, 3 channels)
+- ADC Read 3 channels into DMA, software trigger
+- RTC clocking LSE 15S interrupt
+- LPUART 9600 Baud
+- LIS3DH 10Hz 8 Bit XY axis.
+- SPI 1MHz DMA
+- GPS 1HZ super-e, Software backup mode
+
+loop:
+Trigger Analog read 1Hz
+Process GPS
+Update Display (check LIS3DH orientation)
+Set next power state, calculate power rate
+Wait for ADC & Display
+Stop 2 with Wakeups: RTC, LPUART, BLE
