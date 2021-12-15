@@ -62,6 +62,12 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LED1_Pin GPIO_PIN_5
 #define LED1_GPIO_Port GPIOC
+#define VBATMIDSense_Pin GPIO_PIN_6
+#define VBATMIDSense_GPIO_Port GPIOA
+#define VBATSense_Pin GPIO_PIN_5
+#define VBATSense_GPIO_Port GPIOA
+#define SolarSense_Pin GPIO_PIN_4
+#define SolarSense_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
