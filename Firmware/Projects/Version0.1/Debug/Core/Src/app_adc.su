@@ -1,0 +1,5 @@
+app_adc.c:49:6:queueADC	8	static
+app_adc.c:55:6:ADC_Start	8	static
+app_adc.c:67:6:ADC_End	16	static
+app_adc.c:38:6:App_ADC_Init	8	static
+app_adc.c:84:6:HAL_ADC_ConvCpltCallback	8	static

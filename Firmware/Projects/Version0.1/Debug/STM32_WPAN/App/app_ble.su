@@ -1,0 +1,14 @@
+app_ble.c:839:13:Adv_Cancel	8	static
+app_ble.c:565:13:Ble_Tl_Init	16	static
+app_ble.c:942:13:BLE_UserEvtRx	8	static
+app_ble.c:962:13:BLE_StatusNot	8	static
+app_ble.c:782:16:BleGetBdAddress	8	static
+app_ble.c:576:13:Ble_Hci_Gap_Gatt_Init	48	static
+app_ble.c:748:13:Adv_Request	40	static
+app_ble.c:254:6:APP_BLE_Init	72	static
+app_ble.c:365:28:SVCCTL_App_Notification	8	static
+app_ble.c:552:22:APP_BLE_Get_Server_Connection_Status	0	static
+app_ble.c:924:6:hci_notify_asynch_evt	8	static
+app_ble.c:930:6:hci_cmd_resp_release	8	static
+app_ble.c:936:6:hci_cmd_resp_wait	8	static
+app_ble.c:993:6:SVCCTL_ResumeUserEventFlow	8	static

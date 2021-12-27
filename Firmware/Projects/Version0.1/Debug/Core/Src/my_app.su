@@ -1,0 +1,6 @@
+my_app.c:56:6:queueBSP	8	static
+my_app.c:62:6:BSP_Start	8	static
+my_app.c:45:6:My_app_Init	8	static
+my_app.c:101:6:allow_stop	8	static
+my_app.c:83:6:ADC_End	16	static
+my_app.c:110:6:HAL_ADC_ConvCpltCallback	8	static
