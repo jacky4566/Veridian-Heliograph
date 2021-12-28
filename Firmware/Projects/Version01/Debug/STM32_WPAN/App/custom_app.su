@@ -1,3 +1,0 @@
-custom_app.c:89:6:Custom_STM_App_Notification	0	static
-custom_app.c:131:6:Custom_APP_Notification	0	static
-custom_app.c:168:6:Custom_APP_Init	8	static
