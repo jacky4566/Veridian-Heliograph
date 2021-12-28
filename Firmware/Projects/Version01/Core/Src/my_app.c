@@ -12,6 +12,7 @@
 #include "custom_stm.h"
 #include "stm32_seq.h"
 #include "stm32_lpm.h"
+#include "gnss.h"
 
 //Private Defines
 #define BSP_INTERVAL_FAST   ( 1000000 / CFG_TS_TICK_VAL)  /** 1s */
@@ -25,6 +26,7 @@
 extern ADC_HandleTypeDef hadc1;
 extern TIM_HandleTypeDef htim2;
 extern RTC_HandleTypeDef hrtc;
+extern IWDG_HandleTypeDef hiwdg;
 
 //Private Variables
 uint8_t TimerMeasurement_Id; //TimerID
@@ -44,7 +46,9 @@ void ADC_End( void );
 
 void my_app_Init(void){
 	APP_DBG_MSG("Magic Number 2 \n");
-	APP_DBG_MSG("My_ADC_Init \n");
+	//Start GNSS
+	gnss_Init();
+
 	//Register start and end tasks
 	UTIL_SEQ_RegTask( 1<< CFG_TASK_StartBSP_EVT_ID, UTIL_SEQ_RFU, BSP_Start);
 	UTIL_SEQ_RegTask( 1<< CFG_TASK_EndADC_EVT_ID, UTIL_SEQ_RFU, ADC_End);
@@ -61,6 +65,8 @@ void queueBSP( void ){
 }
 
 void BSP_Start(void){
+	//Kick the dog
+	HAL_IWDG_Refresh(&hiwdg);
 	//Start and Calibrate ADC
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
 	//Start ADC into DMA, Callback will handle data
@@ -73,6 +79,15 @@ void BSP_Start(void){
 		HW_TS_Start(TimerMeasurement_Id, BSP_INTERVAL_FAST);
 	}else{
 		HW_TS_Start(TimerMeasurement_Id, BSP_INTERVAL_SLOW);
+	}
+
+	//Set GNSS timer
+	if (VBatmV > 4000){
+		gnss_power_req(gnss_rate_fast);
+	}else if (VBatmV > 2000){
+		gnss_power_req(gnss_rate_slow);
+	}else{
+		gnss_power_req(gnss_rate_stop);
 	}
 
 	//Don't allow Stop mode
