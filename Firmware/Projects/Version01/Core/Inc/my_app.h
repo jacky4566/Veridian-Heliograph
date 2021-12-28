@@ -9,6 +9,7 @@
 #define INC_MY_APP_H_
 
 //External functions
-void My_app_Init( void );
+void my_app_Init( void );
+void my_app_allow_stop( void );
 
 #endif /* INC_MY_APP_H_ */

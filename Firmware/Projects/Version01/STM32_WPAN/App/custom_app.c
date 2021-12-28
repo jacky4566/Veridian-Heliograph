@@ -37,6 +37,7 @@ typedef struct
 {
   /* LocationService */
   /* BatteryService */
+  /* OTAService */
   /* USER CODE BEGIN CUSTOM_APP_Context_t */
   /* USER CODE END CUSTOM_APP_Context_t */
 
@@ -80,6 +81,7 @@ uint8_t SecureReadData;
 /* Private function prototypes -----------------------------------------------*/
   /* LocationService */
   /* BatteryService */
+  /* OTAService */
 
 /* USER CODE BEGIN PFP */
 
@@ -113,7 +115,17 @@ void Custom_STM_App_Notification(Custom_STM_App_Notification_evt_t *pNotificatio
   /* BatteryService */
     case CUSTOM_STM_BATLVL_READ_EVT:
       /* USER CODE BEGIN CUSTOM_STM_BATLVL_READ_EVT */
+
       /* USER CODE END CUSTOM_STM_BATLVL_READ_EVT */
+      break;
+
+  /* OTAService */
+    case CUSTOM_STM_REBOOT_WRITE_EVT:
+      /* USER CODE BEGIN CUSTOM_STM_REBOOT_WRITE_EVT */
+        *(uint32_t*)SRAM1_BASE = *(uint32_t*)pNotification->DataTransfered.pPayload;
+        NVIC_SystemReset();
+        break;
+      /* USER CODE END CUSTOM_STM_REBOOT_WRITE_EVT */
       break;
 
     default:
@@ -169,9 +181,7 @@ void Custom_APP_Init(void)
 {
   /* USER CODE BEGIN CUSTOM_APP_Init */
 
-	My_app_Init();
-
-	APP_DBG_MSG("Custom_APP Init Done \n");
+	my_app_Init();
 
   /* USER CODE END CUSTOM_APP_Init */
   return;
@@ -189,6 +199,7 @@ void Custom_APP_Init(void)
 
   /* LocationService */
   /* BatteryService */
+  /* OTAService */
 
 /* USER CODE BEGIN FD_LOCAL_FUNCTIONS*/
 

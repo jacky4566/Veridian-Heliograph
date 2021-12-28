@@ -24,6 +24,7 @@
 //HAL Handles
 extern ADC_HandleTypeDef hadc1;
 extern TIM_HandleTypeDef htim2;
+extern RTC_HandleTypeDef hrtc;
 
 //Private Variables
 uint8_t TimerMeasurement_Id; //TimerID
@@ -40,9 +41,9 @@ uint32_t powerState; 	//bitwise power machine
 void queueBSP( void );
 void BSP_Start( void );
 void ADC_End( void );
-void allow_stop( void );
 
-void My_app_Init(void){
+void my_app_Init(void){
+	APP_DBG_MSG("Magic Number 2 \n");
 	APP_DBG_MSG("My_ADC_Init \n");
 	//Register start and end tasks
 	UTIL_SEQ_RegTask( 1<< CFG_TASK_StartBSP_EVT_ID, UTIL_SEQ_RFU, BSP_Start);
@@ -60,7 +61,6 @@ void queueBSP( void ){
 }
 
 void BSP_Start(void){
-	APP_DBG_MSG("Start BSP \n");
 	//Start and Calibrate ADC
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
 	//Start ADC into DMA, Callback will handle data
@@ -85,11 +85,16 @@ void ADC_End(){
 
 	//Clear ADC running bit
 	powerState &= ~(1UL << ADC_Running_Bit);
-	allow_stop();
+	my_app_allow_stop();
 
 	//Convert data
+	RTC_TimeTypeDef sTime;
+	RTC_DateTypeDef sDate;
+	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+
 	temperature = __HAL_ADC_CALC_TEMPERATURE(ADC_AVDD_MV, rawADC[0],ADC_RESOLUTION_12B);
-	APP_DBG_MSG("ADC Result Temp %d \n", temperature);
+	APP_DBG_MSG("%02d.%02d.%02d ADC Result Temp %d \n", sTime.Hours,sTime.Minutes,sTime.Seconds,temperature);
 
 	//Update Battery voltage for BLE BATLVL
 	VBatmV = HAL_GetTick() & 0x3F;
@@ -98,7 +103,7 @@ void ADC_End(){
 	return;
 }
 
-void allow_stop(){
+void my_app_allow_stop(){
 	//Only allow stop mode if powerState == 0
 	if(powerState == 0){
 		//Allow Stop mode

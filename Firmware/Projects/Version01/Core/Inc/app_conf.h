@@ -41,7 +41,7 @@
 /**
  * Define Advertising parameters
  */
-#define CFG_ADV_BD_ADDRESS                (0x000000000000)
+#define CFG_ADV_BD_ADDRESS                (0x80e1260050d6)
 #define CFG_BLE_ADDRESS_TYPE              PUBLIC_ADDR /**< Bluetooth address types defined in ble_legacy.h */
 
 #define CFG_FAST_CONN_ADV_INTERVAL_MIN    (0x0080)   /**< 80ms */
@@ -106,8 +106,8 @@
 /**
  * Device name configuration for Generic Access Service
  */
-#define CFG_GAP_DEVICE_NAME             "TEMPLATE"
-#define CFG_GAP_DEVICE_NAME_LENGTH      (8)
+#define CFG_GAP_DEVICE_NAME             "P2PSRV1"
+#define CFG_GAP_DEVICE_NAME_LENGTH      (7)
 
 /**
  * Define PHY

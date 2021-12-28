@@ -44,8 +44,8 @@ _Min_Stack_Size = 0x1000 ;   /* required amount of stack */
 /* Specify the memory areas */
 MEMORY
 {
-FLASH (rx)                 : ORIGIN = 0x08000000, LENGTH = 512K
-RAM1 (xrw)                 : ORIGIN = 0x20000004, LENGTH = 0x2FFFC
+FLASH (rx)                 : ORIGIN = 0x08007000, LENGTH = 484k
+RAM1 (xrw)                 : ORIGIN = 0x20000008, LENGTH = 0x2FFF8
 RAM_SHARED (xrw)           : ORIGIN = 0x20030000, LENGTH = 10K
 }
 
@@ -58,6 +58,12 @@ SECTIONS
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
+  } >FLASH
+  
+  .ota_region 0x08007140:
+  {
+	KEEP(*(TAG_OTA_START))
+	. = ALIGN(4);
   } >FLASH
 
   /* The program code and other data goes into FLASH */
@@ -112,6 +118,13 @@ SECTIONS
     KEEP (*(SORT(.fini_array.*)))
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
+  } >FLASH
+  
+  .ota_region_end :
+  {
+	. = ALIGN(4);
+	KEEP(*(TAG_OTA_END))
+	. = ALIGN(4);
   } >FLASH
 
   /* used by the startup to initialize data */
@@ -170,6 +183,7 @@ SECTIONS
    MAPPING_TABLE (NOLOAD) : { *(MAPPING_TABLE) } >RAM_SHARED
    MB_MEM1 (NOLOAD)       : { *(MB_MEM1) } >RAM_SHARED
    MB_MEM2 (NOLOAD)       : { _sMB_MEM2 = . ; *(MB_MEM2) ; _eMB_MEM2 = . ; } >RAM_SHARED
+   TAG_OTA_END(NOLOAD)    : { KEEP (*(TAG_OTA_END)) } >FLASH
 }
 
 
