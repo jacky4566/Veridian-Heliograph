@@ -43,6 +43,7 @@ uint32_t powerState; 	//bitwise power machine
 void queueBSP( void );
 void BSP_Start( void );
 void ADC_End( void );
+void SPI_End( void );
 
 void my_app_Init(void){
 	APP_DBG_MSG("Magic Number 2 \n");
@@ -52,6 +53,7 @@ void my_app_Init(void){
 	//Register start and end tasks
 	UTIL_SEQ_RegTask( 1<< CFG_TASK_StartBSP_EVT_ID, UTIL_SEQ_RFU, BSP_Start);
 	UTIL_SEQ_RegTask( 1<< CFG_TASK_EndADC_EVT_ID, UTIL_SEQ_RFU, ADC_End);
+	UTIL_SEQ_RegTask( 1<< CFG_TASK_EndSPI_EVT_ID, UTIL_SEQ_RFU, ADC_End);
 
 	//Run it on a timer
 	HW_TS_Create(CFG_TIM_PROC_ID_ISR, &TimerMeasurement_Id, hw_ts_SingleShot, queueBSP);
@@ -90,6 +92,13 @@ void BSP_Start(void){
 		gnss_power_req(gnss_rate_stop);
 	}
 
+	//Start SPI
+	//powerState |= (1UL << SPI_Running_Bit);
+
+	//Read Accel
+
+	//Write display
+
 	//Don't allow Stop mode
 	UTIL_LPM_SetStopMode(1 << CFG_LPM_APP, UTIL_LPM_DISABLE);
 	return;
@@ -118,6 +127,12 @@ void ADC_End(){
 	return;
 }
 
+void SPI_End(){
+	//Clear SPI running bit
+	powerState &= ~(1UL << SPI_Running_Bit);
+	my_app_allow_stop();
+}
+
 void my_app_allow_stop(){
 	//Only allow stop mode if powerState == 0
 	if(powerState == 0){
@@ -130,4 +145,8 @@ void my_app_allow_stop(){
 void HAL_ADC_ConvCpltCallback  (ADC_HandleTypeDef *hadc) {
 	//Queue ADC_end task
 	UTIL_SEQ_SetTask( 1<<CFG_TASK_EndADC_EVT_ID, CFG_SCH_PRIO_0);
+}
+
+void HAL_SPI_MasterTxCpltCallback(){
+	UTIL_SEQ_SetTask( 1<<CFG_TASK_EndSPI_EVT_ID, CFG_SCH_PRIO_0);
 }
