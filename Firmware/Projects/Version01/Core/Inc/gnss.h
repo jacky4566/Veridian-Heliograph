@@ -29,9 +29,18 @@ typedef enum
   FIX_TIME_ONLY = 5
 } FixType;
 
+typedef enum
+{
+  gnss_wakeUp_none,
+  gnss_wakeUp_LPUART,
+  gnss_wakeUp_OTHER,
+} gnss_wakeup_enum;
+
 //External functions
 void gnss_Init( void );
 void gnss_power_req ( gnss_power_req_t );
+gnss_wakeup_enum getGNSSwakeup(void);
+void setGNSSwakeup( gnss_wakeup_enum );
 
 uint16_t gnss_year();
 uint8_t gnss_month();

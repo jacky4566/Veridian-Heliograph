@@ -32,6 +32,18 @@ extern "C" {
 #include "app_entry.h"
 #include "app_common.h"
 
+#include "stm32wbxx_ll_lpuart.h"
+#include "stm32wbxx_ll_rcc.h"
+#include "stm32wbxx_ll_bus.h"
+#include "stm32wbxx_ll_cortex.h"
+#include "stm32wbxx_ll_system.h"
+#include "stm32wbxx_ll_utils.h"
+#include "stm32wbxx_ll_pwr.h"
+#include "stm32wbxx_ll_gpio.h"
+#include "stm32wbxx_ll_dma.h"
+
+#include "stm32wbxx_ll_exti.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 

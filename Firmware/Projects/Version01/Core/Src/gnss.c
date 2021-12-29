@@ -68,32 +68,26 @@ struct ubx_nav_pvt{
   uint16_t magacc;
 };
 
-//Private variables
+//Variables
 gnss_status_t gnss_status;
 uint8_t GNSSTimer_Id; //TimerID
 
-volatile uint8_t byte_read;
-uint8_t rx_buffer[96];
-uint16_t parser_pos;
 struct ubx_nav_pvt ubx_nav_pvt_parsed;
-uint8_t checksum_buffer[2];
+volatile  uint8_t rx_buffer[96];
+volatile uint16_t parser_pos;
+volatile uint8_t checksum_buffer[2];
+volatile gnss_wakeup_enum gnss_wakeup;
 
 //Private Functions Declarations
-void gnss_parse( void );
+void gnss_parse( uint8_t );
 void gnss_timer_return( void );
-void gnss_process_queue( void );
 uint16_t Checksum( uint8_t*, uint16_t );
-
 
 //Functions
 void gnss_Init( void ){
 	//enable callback interrupt
-	//__HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
 
 	//Start Ublox chip and send settings
-
-	//Register gnss process
-	UTIL_SEQ_RegTask( 1<< CFG_TASK_EndADC_EVT_ID, UTIL_SEQ_RFU, gnss_parse);
 
 	//Create a timer for our Slow mode
 	HW_TS_Create(CFG_TIM_PROC_ID_ISR, &GNSSTimer_Id, hw_ts_SingleShot, gnss_timer_return);
@@ -128,9 +122,6 @@ void gnss_power_req( gnss_power_req_t gnss_new_state ){
 	return;
 }
 
-void gnss_process_queue(){
-	UTIL_SEQ_SetTask( 1<<CFG_TASK_EndADC_EVT_ID, CFG_SCH_PRIO_0);
-}
 
 void gnss_timer_return(void){
 	switch (gnss_status){
@@ -156,7 +147,7 @@ void gnss_timer_return(void){
 	return;
 }
 
-void gnss_parse(){
+void gnss_parse(uint8_t byte_read){
 	/* Identify the packet header */
 	if (parser_pos < 2) {
 	  if (byte_read == UBX_HEADER[parser_pos]) {
@@ -185,6 +176,7 @@ void gnss_parse(){
 	  uint16_t received_checksum =(uint16_t)(checksum_buffer[1]) << 8 | checksum_buffer[0];
 	  uint16_t computed_checksum = Checksum((uint8_t*) &rx_buffer, UBX_PVT_LEN + UBX_CLASS_ID_LEN);
 	  if (computed_checksum == received_checksum) {
+		  //Data is good
 		  memcpy(&ubx_nav_pvt_parsed,(uint8_t*) &rx_buffer, UBX_PVT_LEN);
 	  }
 	  parser_pos = 0;
@@ -264,10 +256,21 @@ int16_t gnss_magDec() {
   return ubx_nav_pvt_parsed.magdec;
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-	  if (huart->Instance == USART3) {
 
-	        HAL_UART_Receive_IT(&huart3, buf, sizeof(buf));
-	    }
+void setGNSSwakeup(gnss_wakeup_enum newState){
+	gnss_wakeup = newState;
 }
 
+gnss_wakeup_enum getGNSSwakeup( void ){
+	return gnss_wakeup;
+}
+
+
+void LPUART_CharReception_Callback(void)
+{
+  /* Read Received character. RXNE flag is cleared by reading of RDR register */
+	gnss_parse((uint8_t)LL_LPUART_ReceiveData8(LPUART1));
+	if (getGNSSwakeup() == gnss_wakeUp_none){
+		setGNSSwakeup(gnss_wakeUp_LPUART);
+	}
+}

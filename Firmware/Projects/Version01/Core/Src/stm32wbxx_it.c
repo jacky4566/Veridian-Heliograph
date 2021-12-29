@@ -22,6 +22,7 @@
 #include "stm32wbxx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "gnss.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -245,6 +246,19 @@ void USART1_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles LPUART1 global interrupt.
+  */
+void LPUART1_IRQHandler(void)
+{
+  /* USER CODE BEGIN LPUART1_IRQn 0 */
+
+  /* USER CODE END LPUART1_IRQn 0 */
+  /* USER CODE BEGIN LPUART1_IRQn 1 */
+
+  /* USER CODE END LPUART1_IRQn 1 */
+}
+
+/**
   * @brief This function handles IPCC RX occupied interrupt.
   */
 void IPCC_C1_RX_IRQHandler(void)
@@ -304,6 +318,7 @@ void DMA2_Channel4_IRQHandler(void)
 
 void RTC_WKUP_IRQHandler(void)
 {
+  setGNSSwakeup(gnss_wakeUp_OTHER);
   HAL_RTCEx_WakeUpTimerIRQHandler();
 }
 
