@@ -42,11 +42,15 @@ uint32_t powerState; 	//bitwise power machine
 //Private Functions
 void queueBSP( void );
 void BSP_Start( void );
+void ADC_Start( void );
 void ADC_End( void );
+void SPI_Start( void );
 void SPI_End( void );
 
 void my_app_Init(void){
 	APP_DBG_MSG("Magic Number 2 \n");
+	//Setup ACCEL
+
 	//Start GNSS
 	gnss_Init();
 
@@ -69,12 +73,10 @@ void queueBSP( void ){
 void BSP_Start(void){
 	//Kick the dog
 	HAL_IWDG_Refresh(&hiwdg);
-	//Start and Calibrate ADC
-	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
-	//Start ADC into DMA, Callback will handle data
-	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)rawADC, ADC_NUM_CHANNELS);
-	//Set ADC running bit
-	powerState |= (1UL << ADC_Running_Bit);
+
+	ADC_Start();
+
+	SPI_Start();
 
 	//Set Next BSP timer
 	if (VBatmV > 3000){
@@ -92,16 +94,18 @@ void BSP_Start(void){
 		gnss_power_req(gnss_rate_stop);
 	}
 
-	//Start SPI
-	//powerState |= (1UL << SPI_Running_Bit);
-
-	//Read Accel
-
-	//Write display
-
 	//Don't allow Stop mode
 	UTIL_LPM_SetStopMode(1 << CFG_LPM_APP, UTIL_LPM_DISABLE);
 	return;
+}
+
+void ADC_Start(){
+	//Start and Calibrate ADC
+	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+	//Start ADC into DMA, Callback will handle data
+	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)rawADC, ADC_NUM_CHANNELS);
+	//Set ADC running bit
+	powerState |= (1UL << ADC_Running_Bit);
 }
 
 void ADC_End(){
@@ -125,6 +129,15 @@ void ADC_End(){
 	uint8_t BLEBatmeasurement = (uint8_t)VBatmV;
 	Custom_STM_App_Update_Char(CUSTOM_STM_BATLVL, (uint8_t *)&BLEBatmeasurement);
 	return;
+}
+
+void SPI_Start(){
+	//Start SPI
+	//powerState |= (1UL << SPI_Running_Bit);
+
+	//Read Accel
+
+	//Write display
 }
 
 void SPI_End(){

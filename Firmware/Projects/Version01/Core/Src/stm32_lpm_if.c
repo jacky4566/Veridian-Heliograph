@@ -140,7 +140,8 @@ void PWR_ExitOffMode( void )
 void PWR_EnterStopMode( void )
 {
 /* USER CODE BEGIN PWR_EnterStopMode_1 */
-
+	//if we received a LPUART before this it was already handled
+	setGNSSwakeup(gnss_wakeUp_none);
 /* USER CODE END PWR_EnterStopMode_1 */
   /**
    * When HAL_DBGMCU_EnableDBGStopMode() is called to keep the debugger active in Stop Mode,
@@ -175,12 +176,12 @@ void PWR_EnterStopMode( void )
 
 /* USER CODE BEGIN PWR_EnterStopMode_2 */
 
-  //if gnss did a thing loop back into sleep, avoids firing up HSE
-  while(getGNSSwakeUp() == gnss_wakeUp_LPUART){
-	  setGNSSwakeUp(gnss_wakeUp_none);
+  //if LPUART interrupt did a thing while sleeping, loop back into sleep, avoids firing up HSE
+  while(getGNSSwakeup() == gnss_wakeUp_LPUART){
+	  setGNSSwakeup(gnss_wakeUp_none);
 	  __WFI();
   }
-  setGNSSwakeUp(gnss_wakeUp_none);
+  setGNSSwakeup(gnss_wakeUp_none);
 
 /* USER CODE END PWR_EnterStopMode_2 */
   return;
