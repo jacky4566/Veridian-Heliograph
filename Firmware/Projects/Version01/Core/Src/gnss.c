@@ -9,6 +9,7 @@
 
 #include <gnss.h>
 #include "main.h"
+#include "dbg_trace.h"
 #include "stm32_seq.h"
 
 //Private Defines and statics
@@ -268,9 +269,15 @@ gnss_wakeup_enum getGNSSwakeup( void ){
 
 void LPUART_CharReception_Callback(void)
 {
-  /* Read Received character. RXNE flag is cleared by reading of RDR register */
-	gnss_parse((uint8_t)LL_LPUART_ReceiveData8(LPUART1));
-	if (getGNSSwakeup() == gnss_wakeUp_none){
-		setGNSSwakeup(gnss_wakeUp_LPUART);
+	while (LL_LPUART_IsActiveFlag_RXNE(LPUART1)){ //empty FIFO
+	  	/* Read Received character. RXNE flag is cleared by reading of RDR register */
+		char newByte = LL_LPUART_ReceiveData8(LPUART1);
+
+		APP_DBG_MSG("GNSS Char %c \n", newByte);
+		//gnss_parse((uint8_t)LL_LPUART_ReceiveData8(LPUART1));
+		if (getGNSSwakeup() == gnss_wakeUp_none){
+			setGNSSwakeup(gnss_wakeUp_LPUART);
+		}
 	}
+	LL_LPUART_ClearFlag_WKUP(LPUART1);
 }

@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "gnss.h"
+#include "dbg_trace.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -251,7 +252,15 @@ void USART1_IRQHandler(void)
 void LPUART1_IRQHandler(void)
 {
   /* USER CODE BEGIN LPUART1_IRQn 0 */
-
+	if (LL_LPUART_IsActiveFlag_WKUP(LPUART1) && LL_LPUART_IsEnabledIT_WKUP(LPUART1))
+	{
+		LL_LPUART_DisableIT_WKUP(LPUART1);
+		LL_LPUART_ClearFlag_WKUP(LPUART1);
+	}
+	if (LL_LPUART_IsActiveFlag_RXNE(LPUART1))
+	{
+		LPUART_CharReception_Callback();
+	}
   /* USER CODE END LPUART1_IRQn 0 */
   /* USER CODE BEGIN LPUART1_IRQn 1 */
 

@@ -519,9 +519,9 @@ typedef enum
 #endif
 
 #if (CFG_DEBUG_TRACE != 0)
-#undef CFG_LPM_SUPPORTED
+//#undef CFG_LPM_SUPPORTED
 #undef CFG_DEBUGGER_SUPPORTED
-#define CFG_LPM_SUPPORTED         0
+//#define CFG_LPM_SUPPORTED         0
 #define CFG_DEBUGGER_SUPPORTED      1
 #endif
 
@@ -587,7 +587,6 @@ typedef enum
     /* USER CODE BEGIN CFG_Task_Id_With_HCI_Cmd_t */
 	CFG_TASK_StartBSP_EVT_ID,
 	CFG_TASK_EndADC_EVT_ID,
-	CFG_TASK_EndSPI_EVT_ID,
 	CFG_TASK_GNSS_EVT_ID,
     /* USER CODE END CFG_Task_Id_With_HCI_Cmd_t */
     CFG_LAST_TASK_ID_WITH_HCICMD,                                               /**< Shall be LAST in the list */

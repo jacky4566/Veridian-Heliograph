@@ -42,6 +42,9 @@ void gnss_power_req ( gnss_power_req_t );
 gnss_wakeup_enum getGNSSwakeup(void);
 void setGNSSwakeup( gnss_wakeup_enum );
 
+//IRQ
+void LPUART_CharReception_Callback(void);
+
 uint16_t gnss_year();
 uint8_t gnss_month();
 uint8_t gnss_day();

@@ -49,8 +49,6 @@ DMA_HandleTypeDef hdma_adc1;
 
 IPCC_HandleTypeDef hipcc;
 
-IWDG_HandleTypeDef hiwdg;
-
 UART_HandleTypeDef huart1;
 DMA_HandleTypeDef hdma_usart1_tx;
 
@@ -72,7 +70,6 @@ static void MX_RTC_Init(void);
 static void MX_IPCC_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM2_Init(void);
-static void MX_IWDG_Init(void);
 static void MX_LPUART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -125,7 +122,6 @@ int main(void)
   MX_USART1_UART_Init();
   MX_ADC1_Init();
   MX_TIM2_Init();
-  MX_IWDG_Init();
   MX_LPUART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
@@ -166,13 +162,12 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI1
-                              |RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE
+                              |RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -328,35 +323,6 @@ static void MX_IPCC_Init(void)
 }
 
 /**
-  * @brief IWDG Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_IWDG_Init(void)
-{
-
-  /* USER CODE BEGIN IWDG_Init 0 */
-
-  /* USER CODE END IWDG_Init 0 */
-
-  /* USER CODE BEGIN IWDG_Init 1 */
-
-  /* USER CODE END IWDG_Init 1 */
-  hiwdg.Instance = IWDG;
-  hiwdg.Init.Prescaler = IWDG_PRESCALER_16;
-  hiwdg.Init.Window = 4095;
-  hiwdg.Init.Reload = 4095;
-  if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN IWDG_Init 2 */
-  // 4096 / (32,000 / 16) = ~2s
-  /* USER CODE END IWDG_Init 2 */
-
-}
-
-/**
   * @brief LPUART1 Initialization Function
   * @param None
   * @retval None
@@ -425,9 +391,20 @@ static void MX_LPUART1_UART_Init(void)
   LL_LPUART_SetTXFIFOThreshold(LPUART1, LL_LPUART_FIFOTHRESHOLD_1_8);
   LL_LPUART_SetRXFIFOThreshold(LPUART1, LL_LPUART_FIFOTHRESHOLD_1_8);
   LL_LPUART_EnableFIFO(LPUART1);
+  LL_LPUART_EnableOverrunDetect(LPUART1);
+  LL_LPUART_EnableDMADeactOnRxErr(LPUART1);
 
   /* USER CODE BEGIN WKUPType LPUART1 */
+
+  /* Configure LPUART1 transfer interrupts : */
+  /* Clear Overrun flag, in case characters have already been sent to USART */
+  LL_LPUART_ClearFlag_ORE(LPUART1);
+  /* Enable RXNE interrupts */
+  LL_LPUART_EnableIT_RXNE_RXFNE(LPUART1);
+
   /* Set the wake-up event type : specify wake-up on RXNE flag */
+
+  LL_LPUART_EnableInStopMode(LPUART1);
   LL_LPUART_SetWKUPType(LPUART1, LL_LPUART_WAKEUP_ON_RXNE);
 
   /* USER CODE END WKUPType LPUART1 */
@@ -632,7 +609,12 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 void UTIL_SEQ_PreIdle(void){
-	HAL_IWDG_Refresh(&hiwdg);
+	//Disable STOP if we are running perphierals
+	if (((ADC1->CR & ADC_CR_ADEN) & (SPI1->CR1 & SPI_CR1_SPE) & (HAL_UART_GetState(&huart1) == HAL_UART_STATE_BUSY_TX )) == 0UL){
+		//UTIL_LPM_SetStopMode(1 << CFG_LPM_APP, UTIL_LPM_ENABLE);
+	} else{
+		UTIL_LPM_SetStopMode(1 << CFG_LPM_APP, UTIL_LPM_DISABLE);
+	}
 }
 
 /* USER CODE END 4 */
