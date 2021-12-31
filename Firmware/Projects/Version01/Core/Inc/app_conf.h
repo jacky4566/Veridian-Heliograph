@@ -44,8 +44,8 @@
 #define CFG_ADV_BD_ADDRESS                (0x80e1260050d6)
 #define CFG_BLE_ADDRESS_TYPE              PUBLIC_ADDR /**< Bluetooth address types defined in ble_legacy.h */
 
-#define CFG_FAST_CONN_ADV_INTERVAL_MIN    (0x0080)   /**< 80ms */
-#define CFG_FAST_CONN_ADV_INTERVAL_MAX    (0x00A0)  /**< 100ms */
+#define CFG_FAST_CONN_ADV_INTERVAL_MIN    (0x0640)   /**< 80ms */
+#define CFG_FAST_CONN_ADV_INTERVAL_MAX    (0x0FA0)  /**< 100ms */
 #define CFG_LP_CONN_ADV_INTERVAL_MIN      (0x640) /**< 1s */
 #define CFG_LP_CONN_ADV_INTERVAL_MAX      (0xFA0) /**< 2.5s */
 #define ADV_TYPE                          ADV_IND

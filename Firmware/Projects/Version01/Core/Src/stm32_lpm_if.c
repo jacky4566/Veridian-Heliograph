@@ -143,7 +143,7 @@ void PWR_EnterStopMode( void )
 
   /*Interrupt from Stop*/
   LL_LPUART_EnableIT_WKUP(LPUART1);
-  HAL_UART_Transmit(&huart1, "ST\n", 3, 1000);
+  //HAL_UART_Transmit(&huart1, "ST\n", 3, 1000);
 /* USER CODE END PWR_EnterStopMode_1 */
   /**
    * When HAL_DBGMCU_EnableDBGStopMode() is called to keep the debugger active in Stop Mode,
