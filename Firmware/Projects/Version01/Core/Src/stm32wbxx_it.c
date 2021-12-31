@@ -60,7 +60,6 @@
 extern DMA_HandleTypeDef hdma_adc1;
 extern ADC_HandleTypeDef hadc1;
 extern IPCC_HandleTypeDef hipcc;
-extern DMA_HandleTypeDef hdma_usart1_tx;
 extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
 
@@ -252,12 +251,15 @@ void USART1_IRQHandler(void)
 void LPUART1_IRQHandler(void)
 {
   /* USER CODE BEGIN LPUART1_IRQn 0 */
-	if (LL_LPUART_IsActiveFlag_WKUP(LPUART1) && LL_LPUART_IsEnabledIT_WKUP(LPUART1))
+	if (LL_LPUART_IsActiveFlag_WKUP(LPUART1))
 	{
-		LL_LPUART_DisableIT_WKUP(LPUART1);
 		LL_LPUART_ClearFlag_WKUP(LPUART1);
+		LPUART_CharReception_Callback();
+		if (LL_LPUART_IsEnabledIT_WKUP(LPUART1)){
+		  __WFI(); //go back to STOP
+		}
 	}
-	if (LL_LPUART_IsActiveFlag_RXNE(LPUART1))
+	else if (LL_LPUART_IsActiveFlag_RXNE(LPUART1)) //regular interrupt from run mode
 	{
 		LPUART_CharReception_Callback();
 	}
@@ -309,25 +311,10 @@ void HSEM_IRQHandler(void)
   /* USER CODE END HSEM_IRQn 1 */
 }
 
-/**
-  * @brief This function handles DMA2 channel4 global interrupt.
-  */
-void DMA2_Channel4_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA2_Channel4_IRQn 0 */
-
-  /* USER CODE END DMA2_Channel4_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart1_tx);
-  /* USER CODE BEGIN DMA2_Channel4_IRQn 1 */
-
-  /* USER CODE END DMA2_Channel4_IRQn 1 */
-}
-
 /* USER CODE BEGIN 1 */
 
 void RTC_WKUP_IRQHandler(void)
 {
-  setGNSSwakeup(gnss_wakeUp_OTHER);
   HAL_RTCEx_WakeUpTimerIRQHandler();
 }
 

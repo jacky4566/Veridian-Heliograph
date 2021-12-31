@@ -27,6 +27,8 @@
 extern ADC_HandleTypeDef hadc1;
 extern TIM_HandleTypeDef htim2;
 extern RTC_HandleTypeDef hrtc;
+extern RTC_HandleTypeDef hrtc;
+extern UART_HandleTypeDef huart1;
 
 //Private Variables
 uint8_t TimerMeasurement_Id; //TimerID
@@ -58,6 +60,18 @@ void my_app_Init(void){
 	//Run it on a timer
 	HW_TS_Create(CFG_TIM_PROC_ID_ISR, &TimerMeasurement_Id, hw_ts_SingleShot, queueBSP);
 	HW_TS_Start(TimerMeasurement_Id, BSP_INTERVAL_FAST);
+}
+
+void myAppReadyStop(){
+	//Disable STOP if we are running perphierals
+	if (((ADC1->CR & ADC_CR_ADEN)
+			& (SPI1->CR1 & SPI_CR1_SPE)
+			& (HAL_UART_GetState(&huart1) == HAL_UART_STATE_BUSY_TX ))
+			== 0UL){
+		UTIL_LPM_SetStopMode(1 << CFG_LPM_APP, UTIL_LPM_ENABLE);
+	} else{
+		UTIL_LPM_SetStopMode(1 << CFG_LPM_APP, UTIL_LPM_DISABLE);
+	}
 }
 
 void queueBSP( void ){

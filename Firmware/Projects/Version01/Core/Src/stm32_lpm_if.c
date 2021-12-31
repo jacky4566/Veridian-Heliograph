@@ -61,7 +61,7 @@ static void ExitLowPower( void );
 /* USER CODE END Private_Macro */
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Private_Variables */
-
+extern UART_HandleTypeDef huart1;
 /* USER CODE END Private_Variables */
 
 /* Functions Definition ------------------------------------------------------*/
@@ -140,10 +140,10 @@ void PWR_ExitOffMode( void )
 void PWR_EnterStopMode( void )
 {
 /* USER CODE BEGIN PWR_EnterStopMode_1 */
-	//if we received a LPUART before this it was already handled
-	setGNSSwakeup(gnss_wakeUp_none);
-	  /*Interrupt from Stop*/
-	  LL_LPUART_EnableIT_WKUP(LPUART1);
+
+  /*Interrupt from Stop*/
+  LL_LPUART_EnableIT_WKUP(LPUART1);
+  HAL_UART_Transmit(&huart1, "ST\n", 3, 1000);
 /* USER CODE END PWR_EnterStopMode_1 */
   /**
    * When HAL_DBGMCU_EnableDBGStopMode() is called to keep the debugger active in Stop Mode,
@@ -178,13 +178,7 @@ void PWR_EnterStopMode( void )
 
 /* USER CODE BEGIN PWR_EnterStopMode_2 */
 
-  //if LPUART interrupt did a thing while sleeping, loop back into sleep, avoids firing up HSE
-  /*while(getGNSSwakeup() == gnss_wakeUp_LPUART){
-	  setGNSSwakeup(gnss_wakeUp_none);
-	  __WFI();
-  }
-  setGNSSwakeup(gnss_wakeUp_none);
-  */
+  LL_LPUART_DisableIT_WKUP(LPUART1);
 
 /* USER CODE END PWR_EnterStopMode_2 */
   return;
@@ -222,7 +216,7 @@ void PWR_ExitStopMode( void )
 void PWR_EnterSleepMode( void )
 {
 /* USER CODE BEGIN PWR_EnterSleepMode_1 */
-
+	HAL_UART_Transmit(&huart1, "SL\n", 3, 1000);
 /* USER CODE END PWR_EnterSleepMode_1 */
 
   HAL_SuspendTick();

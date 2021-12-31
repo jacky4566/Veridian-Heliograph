@@ -50,7 +50,6 @@ DMA_HandleTypeDef hdma_adc1;
 IPCC_HandleTypeDef hipcc;
 
 UART_HandleTypeDef huart1;
-DMA_HandleTypeDef hdma_usart1_tx;
 
 RTC_HandleTypeDef hrtc;
 
@@ -124,8 +123,12 @@ int main(void)
   MX_TIM2_Init();
   MX_LPUART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  HAL_DBGMCU_EnableDBGSleepMode();
+  HAL_DBGMCU_EnableDBGStopMode();
 
-
+  /***************** ENABLE DEBUGGER *************************************/
+  LL_EXTI_EnableIT_32_63(LL_EXTI_LINE_48);
+  HAL_UART_Transmit(&huart1, "Start\n", 6, 1000);
   /* USER CODE END 2 */
 
   /* Init code for STM32_WPAN */
@@ -391,8 +394,6 @@ static void MX_LPUART1_UART_Init(void)
   LL_LPUART_SetTXFIFOThreshold(LPUART1, LL_LPUART_FIFOTHRESHOLD_1_8);
   LL_LPUART_SetRXFIFOThreshold(LPUART1, LL_LPUART_FIFOTHRESHOLD_1_8);
   LL_LPUART_EnableFIFO(LPUART1);
-  LL_LPUART_EnableOverrunDetect(LPUART1);
-  LL_LPUART_EnableDMADeactOnRxErr(LPUART1);
 
   /* USER CODE BEGIN WKUPType LPUART1 */
 
@@ -412,9 +413,7 @@ static void MX_LPUART1_UART_Init(void)
   LL_LPUART_Enable(LPUART1);
 
   /* Polling LPUART1 initialisation */
-  while((!(LL_LPUART_IsActiveFlag_TEACK(LPUART1))) || (!(LL_LPUART_IsActiveFlag_REACK(LPUART1))))
-  {
-  }
+  while((!(LL_LPUART_IsActiveFlag_TEACK(LPUART1))) || (!(LL_LPUART_IsActiveFlag_REACK(LPUART1)))) {}
   /* USER CODE BEGIN LPUART1_Init 2 */
 
   /* USER CODE END LPUART1_Init 2 */
@@ -443,7 +442,7 @@ void MX_USART1_UART_Init(void)
   huart1.Init.Parity = UART_PARITY_NONE;
   huart1.Init.Mode = UART_MODE_TX_RX;
   huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart1.Init.OverSampling = UART_OVERSAMPLING_8;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
   huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
   huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
@@ -578,16 +577,12 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMAMUX1_CLK_ENABLE();
-  __HAL_RCC_DMA2_CLK_ENABLE();
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
   /* DMA1_Channel1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-  /* DMA2_Channel4_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Channel4_IRQn, 15, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Channel4_IRQn);
 
 }
 
@@ -609,12 +604,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 void UTIL_SEQ_PreIdle(void){
-	//Disable STOP if we are running perphierals
-	if (((ADC1->CR & ADC_CR_ADEN) & (SPI1->CR1 & SPI_CR1_SPE) & (HAL_UART_GetState(&huart1) == HAL_UART_STATE_BUSY_TX )) == 0UL){
-		//UTIL_LPM_SetStopMode(1 << CFG_LPM_APP, UTIL_LPM_ENABLE);
-	} else{
-		UTIL_LPM_SetStopMode(1 << CFG_LPM_APP, UTIL_LPM_DISABLE);
-	}
+	myAppReadyStop();
 }
 
 /* USER CODE END 4 */

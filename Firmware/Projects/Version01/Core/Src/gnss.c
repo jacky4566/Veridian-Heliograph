@@ -77,12 +77,14 @@ struct ubx_nav_pvt ubx_nav_pvt_parsed;
 volatile  uint8_t rx_buffer[96];
 volatile uint16_t parser_pos;
 volatile uint8_t checksum_buffer[2];
-volatile gnss_wakeup_enum gnss_wakeup;
 
 //Private Functions Declarations
 void gnss_parse( uint8_t );
 void gnss_timer_return( void );
 uint16_t Checksum( uint8_t*, uint16_t );
+
+//Temporary
+extern UART_HandleTypeDef huart1;
 
 //Functions
 void gnss_Init( void ){
@@ -257,27 +259,13 @@ int16_t gnss_magDec() {
   return ubx_nav_pvt_parsed.magdec;
 }
 
-
-void setGNSSwakeup(gnss_wakeup_enum newState){
-	gnss_wakeup = newState;
-}
-
-gnss_wakeup_enum getGNSSwakeup( void ){
-	return gnss_wakeup;
-}
-
-
 void LPUART_CharReception_Callback(void)
 {
 	while (LL_LPUART_IsActiveFlag_RXNE(LPUART1)){ //empty FIFO
 	  	/* Read Received character. RXNE flag is cleared by reading of RDR register */
 		char newByte = LL_LPUART_ReceiveData8(LPUART1);
-
-		APP_DBG_MSG("GNSS Char %c \n", newByte);
+		HAL_UART_Transmit(&huart1, &newByte, 1, 1000);
+		//APP_DBG_MSG("GNSS Char %c \n", newByte);
 		//gnss_parse((uint8_t)LL_LPUART_ReceiveData8(LPUART1));
-		if (getGNSSwakeup() == gnss_wakeUp_none){
-			setGNSSwakeup(gnss_wakeUp_LPUART);
-		}
 	}
-	LL_LPUART_ClearFlag_WKUP(LPUART1);
 }
