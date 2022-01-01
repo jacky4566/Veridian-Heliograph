@@ -605,10 +605,6 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void UTIL_SEQ_PreIdle(void){
-	myAppReadyStop();
-}
-
 /* USER CODE END 4 */
 
 /**

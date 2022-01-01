@@ -12,6 +12,5 @@
 
 //External functions
 void my_app_Init( void );
-void myAppReadyStop( void );
 
 #endif /* INC_MY_APP_H_ */

@@ -45,6 +45,7 @@ void BSP_Start( void );
 void ADC_Start( void );
 void ADC_End( void );
 void SPI_Start( void );
+void myAppReadyStop( void );
 
 void my_app_Init(void){
 	APP_DBG_MSG("Magic Number 2 \n");
@@ -146,4 +147,8 @@ void SPI_Start(){
 void HAL_ADC_ConvCpltCallback  (ADC_HandleTypeDef *hadc) {
 	//Queue ADC end task
 	UTIL_SEQ_SetTask( 1<<CFG_TASK_EndADC_EVT_ID, CFG_SCH_PRIO_0);
+}
+
+void UTIL_SEQ_PreIdle(void){
+	myAppReadyStop();
 }

@@ -216,7 +216,7 @@ void PWR_ExitStopMode( void )
 void PWR_EnterSleepMode( void )
 {
 /* USER CODE BEGIN PWR_EnterSleepMode_1 */
-	HAL_UART_Transmit(&huart1, "SL\n", 3, 1000);
+	//HAL_UART_Transmit(&huart1, "SL\n", 3, 1000);
 /* USER CODE END PWR_EnterSleepMode_1 */
 
   HAL_SuspendTick();
