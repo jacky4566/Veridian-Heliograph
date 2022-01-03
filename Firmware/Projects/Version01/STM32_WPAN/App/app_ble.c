@@ -225,6 +225,9 @@ uint8_t ad_data[13] = {
 
 /* USER CODE BEGIN PV */
 
+uint8_t killTimer_Id; //TimerID
+#define BLE_KILL_INTERVAL   ( 5 * 60 * 1000000 / CFG_TS_TICK_VAL)  /** 5min */
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -242,12 +245,14 @@ static void Connection_Interval_Update_Req( void );
 
 /* USER CODE BEGIN PFP */
 
+void killConnections ( void );
+
 /* USER CODE END PFP */
 
 /* External variables --------------------------------------------------------*/
 
 /* USER CODE BEGIN EV */
-
+extern UART_HandleTypeDef huart1;
 /* USER CODE END EV */
 
 /* Functions Definition ------------------------------------------------------*/
@@ -343,6 +348,8 @@ void APP_BLE_Init( void )
 
 /* USER CODE BEGIN APP_BLE_Init_3 */
 
+  UTIL_SEQ_RegTask( 1<<CFG_TASK_ADV_CANCEL_ID, UTIL_SEQ_RFU, Adv_Cancel);
+
 /* USER CODE END APP_BLE_Init_3 */
 
   /**
@@ -357,7 +364,8 @@ void APP_BLE_Init( void )
    Adv_Request(APP_BLE_FAST_ADV);
 
 /* USER CODE BEGIN APP_BLE_Init_2 */
-
+   //Setup timer and method to kill connections
+   HW_TS_Create(CFG_TIM_PROC_ID_ISR, &killTimer_Id, hw_ts_SingleShot, killConnections);
 /* USER CODE END APP_BLE_Init_2 */
   return;
 }
@@ -454,7 +462,8 @@ SVCCTL_UserEvtFlowStatus_t SVCCTL_App_Notification( void *pckt )
           handleNotification.ConnectionHandle = BleApplicationContext.BleApplicationContext_legacy.connectionHandle;
           Custom_APP_Notification(&handleNotification);
           /* USER CODE BEGIN HCI_EVT_LE_CONN_COMPLETE */
-
+          	  //start kill timer
+          	  HW_TS_Start(killTimer_Id, BLE_KILL_INTERVAL);
           /* USER CODE END HCI_EVT_LE_CONN_COMPLETE */
         }
         break; /* HCI_LE_CONNECTION_COMPLETE_SUBEVT_CODE */
@@ -914,6 +923,33 @@ static void Connection_Interval_Update_Req( void )
 #endif
 
 /* USER CODE BEGIN FD_SPECIFIC_FUNCTIONS */
+
+void startBle( void ){
+	if ( BleApplicationContext.Device_Connection_Status == APP_BLE_IDLE){
+		HAL_UART_Transmit(&huart1, "Adv_Start\n", 10, 1000);
+		Ble_Tl_Init();
+	}
+}
+
+void stopBle ( void ){
+	if ( BleApplicationContext.Device_Connection_Status != APP_BLE_IDLE){
+		HAL_UART_Transmit(&huart1, "Adv_Cance2\n", 11, 1000);
+		killConnections();
+		aci_gap_set_non_discoverable();
+		LL_PWR_ClearFlag_WU();
+		LL_C2_PWR_DisableInternWU();
+	    LL_C2_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
+		BleApplicationContext.Device_Connection_Status = APP_BLE_IDLE;
+	}
+}
+
+void killConnections ( void ){
+	//Kill active connections
+	if (BleApplicationContext.Device_Connection_Status == APP_BLE_CONNECTED_SERVER){
+		aci_gap_terminate(BleApplicationContext.BleApplicationContext_legacy.connectionHandle, ERR_RMT_DEV_TERM_CONN_POWER_OFF);
+		HAL_Delay(100); //wait for disconnect
+	}
+}
 
 /* USER CODE END FD_SPECIFIC_FUNCTIONS */
 /*************************************************************

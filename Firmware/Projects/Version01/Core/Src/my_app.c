@@ -13,6 +13,7 @@
 #include "stm32_seq.h"
 #include "stm32_lpm.h"
 #include "gnss.h"
+#include "app_ble.h"
 
 //Private Defines
 #define BSP_INTERVAL_FAST   ( 1000000 / CFG_TS_TICK_VAL)  /** 1s */
@@ -107,6 +108,25 @@ void BSP_Start(void){
 	}else{
 		gnss_power_req(gnss_rate_stop);
 	}
+
+	//BLE on/off
+	if (VBatmV > 3000){
+		//startBle();
+	}else if (VBatmV < 2000){
+		//stopBle();
+	}
+
+	//Testing BLE connect and kill
+	/*static uint8_t counter = 0;
+	if (8 == counter){
+		stopBle();
+	} else if (30 == counter){
+		startBle();
+	}
+	Custom_STM_App_Update_Char(CUSTOM_STM_BATLVL, (uint8_t *)&counter);
+	if (counter < 250){
+		counter++;
+	}*/
 	return;
 }
 
@@ -131,7 +151,7 @@ void ADC_End(){
 
 	//Update Battery voltage for BLE BATLVL
 	uint8_t BLEBatmeasurement = (uint8_t)temperature;
-	Custom_STM_App_Update_Char(CUSTOM_STM_BATLVL, (uint8_t *)&BLEBatmeasurement);
+	//Custom_STM_App_Update_Char(CUSTOM_STM_BATLVL, (uint8_t *)&BLEBatmeasurement);
 	return;
 }
 

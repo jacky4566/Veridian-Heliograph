@@ -71,6 +71,9 @@ extern "C" {
 
 /* USER CODE BEGIN EF */
 
+  void startBle( void );
+  void stopBle( void );
+
 /* USER CODE END EF */
 
 #ifdef __cplusplus

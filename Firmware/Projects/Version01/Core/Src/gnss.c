@@ -264,7 +264,7 @@ void LPUART_CharReception_Callback(void)
 	while (LL_LPUART_IsActiveFlag_RXNE(LPUART1)){ //empty FIFO
 	  	/* Read Received character. RXNE flag is cleared by reading of RDR register */
 		char newByte = LL_LPUART_ReceiveData8(LPUART1);
-		HAL_UART_Transmit(&huart1, &newByte, 1, 1000);
+		//HAL_UART_Transmit(&huart1, &newByte, 1, 1000);
 		//APP_DBG_MSG("GNSS Char %c \n", newByte);
 		//gnss_parse((uint8_t)LL_LPUART_ReceiveData8(LPUART1));
 	}
