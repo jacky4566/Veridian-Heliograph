@@ -11,6 +11,7 @@
 #include "main.h"
 #include "dbg_trace.h"
 #include "stm32_seq.h"
+#include "UBXCFG.h"
 
 //Private Defines and statics
 #define GNSS_INTERVAL_SLOW   ( 60 * 1000000 / CFG_TS_TICK_VAL)  //timeout waiting for fix
@@ -23,14 +24,6 @@ static uint8_t UBX_HEADER[2] = {0xB5, 0x62}; //UBX default header
 static uint8_t UBX_CLASS[4] = {0x01, 0x07, 0x00, 0x92}; //Class, ID, and length information
 
 //data types
-typedef enum
-{
-  gnss_state_fast,
-  gnss_state_slow,
-  gnss_state_sleep,
-  gnss_state_off
-} gnss_status_t;
-
 struct ubx_nav_pvt{
   uint16_t class_ID;
   uint16_t len;
@@ -70,7 +63,7 @@ struct ubx_nav_pvt{
 };
 
 //Variables
-gnss_status_t gnss_status;
+gnss_power_t gnss_status = gnss_rate_stop;
 uint8_t GNSSTimer_Id; //TimerID
 
 struct ubx_nav_pvt ubx_nav_pvt_parsed;
@@ -81,46 +74,53 @@ volatile uint8_t checksum_buffer[2];
 //Private Functions Declarations
 void gnss_parse( uint8_t );
 void gnss_timer_return( void );
+void GPSStart( void );
+void GPSStop( void );
+void UBX_CFG( void );
+void LPUART_Transmit_Blocking( const void* uint8_t, int);
 uint16_t Checksum( uint8_t*, uint16_t );
 
 //Temporary
 extern UART_HandleTypeDef huart1;
+extern RTC_HandleTypeDef hrtc;
 
 //Functions
 void gnss_Init( void ){
-	//enable callback interrupt
-
-	//Start Ublox chip and send settings
-
 	//Create a timer for our Slow mode
 	HW_TS_Create(CFG_TIM_PROC_ID_ISR, &GNSSTimer_Id, hw_ts_SingleShot, gnss_timer_return);
 
 	//Start GPS in fast mode
 	gnss_power_req(gnss_rate_fast);
+
+	//Send config
+	UBX_CFG();
 	return;
 }
 
-void gnss_power_req( gnss_power_req_t gnss_new_state ){
+void gnss_power_req( gnss_power_t gnss_new_state ){
 	//Outside functions can kick gnss
-	switch(gnss_new_state){
-		case gnss_rate_fast:
-			//Start GNSS chip
-			gnss_status = gnss_state_fast;
-			//Stop any running timers
-			HW_TS_Stop(GNSSTimer_Id);
-			break;
-		case gnss_rate_slow:
-			gnss_status = gnss_state_slow;
-			//Start GNSS chip with timer
-			HW_TS_Start(GNSSTimer_Id, GNSS_INTERVAL_SLOW);
-			break;
-		case gnss_rate_stop:
-			//Stop GNSS chip
-			//Stop running timer
-			HW_TS_Stop(GNSSTimer_Id);
-			break;
-		default:
-			break;
+	if (gnss_new_state != gnss_status){
+		gnss_status = gnss_new_state;
+		switch(gnss_status){
+			case gnss_rate_fast:
+				GPSStart();
+				HW_TS_Stop(GNSSTimer_Id);
+				break;
+			case gnss_rate_slow:
+				GPSStart();
+				HW_TS_Start(GNSSTimer_Id, GNSS_INTERVAL_SLOW);
+				break;
+			case gnss_rate_sleep:
+				GPSStop();
+				HW_TS_Start(GNSSTimer_Id, GNSS_INTERVAL_SLEEP);
+				break;
+			case gnss_rate_stop:
+				GPSStop();
+				HW_TS_Stop(GNSSTimer_Id);
+				break;
+			default:
+				break;
+		}
 	}
 	return;
 }
@@ -128,26 +128,72 @@ void gnss_power_req( gnss_power_req_t gnss_new_state ){
 
 void gnss_timer_return(void){
 	switch (gnss_status){
-		case gnss_state_fast:
-			//stop timer, no action needed
-			HW_TS_Stop(GNSSTimer_Id);
+		case gnss_rate_fast:
+			gnss_power_req(gnss_rate_fast);
 			break;
-		case gnss_state_sleep:
-			//turn on GPS
-			//Set timer for timeout
-			gnss_status = gnss_state_slow;
-			HW_TS_Start(GNSSTimer_Id, GNSS_INTERVAL_SLOW);
+		case gnss_rate_slow:
+			gnss_power_req(gnss_rate_sleep);
 			break;
-		case gnss_state_slow:
-			//turn off GPS
-			//Set timer for next on time
-			gnss_status = gnss_state_sleep;
-			HW_TS_Start(GNSSTimer_Id, GNSS_INTERVAL_SLEEP);
+		case gnss_rate_sleep:
+			gnss_power_req(gnss_rate_slow);
+			break;
+		case gnss_rate_stop:
+			gnss_power_req(gnss_rate_stop);
 			break;
 		default:
 			break;
 	}
 	return;
+}
+
+
+void GPSStart(){
+	// HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET); //Set Pin HIGH
+	if (!LL_LPUART_IsEnabled(LPUART1)){
+		LL_LPUART_Enable(LPUART1);
+		while((!(LL_LPUART_IsActiveFlag_TEACK(LPUART1))) || (!(LL_LPUART_IsActiveFlag_REACK(LPUART1)))){}
+	}
+}
+
+void GPSStop(){
+	// HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); //Set Pin LOW
+	LL_LPUART_Disable(LPUART1);
+}
+
+void UBX_CFG(){
+	if (!(HAL_RTCEx_BKUPRead(&hrtc, RTCbckupGNSS) & 0x01)){ //check if we are already set
+		//Sends the commands to inialize Ublox chips
+		LPUART_Transmit_Blocking(UBX_CFG_GNSS, sizeof(UBX_CFG_GNSS));
+		LPUART_Transmit_Blocking(UBX_NAV_GGA_OFF, sizeof(UBX_NAV_GGA_OFF));
+		LPUART_Transmit_Blocking(UBX_NAV_GLL_OFF, sizeof(UBX_NAV_GLL_OFF));
+		LPUART_Transmit_Blocking(UBX_NAV_GSA_OFF, sizeof(UBX_NAV_GSA_OFF));
+		LPUART_Transmit_Blocking(UBX_NAV_GSV_OFF, sizeof(UBX_NAV_GSV_OFF));
+		LPUART_Transmit_Blocking(UBX_NAV_RMC_OFF, sizeof(UBX_NAV_RMC_OFF));
+		LPUART_Transmit_Blocking(UBX_NAV_VTG_OFF, sizeof(UBX_NAV_VTG_OFF));
+		LPUART_Transmit_Blocking(UBX_NAV_PVT_ON, sizeof(UBX_NAV_PVT_ON));
+		LPUART_Transmit_Blocking(UBX_CFG_RXM, sizeof(UBX_CFG_RXM));
+		LPUART_Transmit_Blocking(UBX_CFG_PM2, sizeof(UBX_CFG_PM2));
+		LPUART_Transmit_Blocking(UBX_CFG_SAVE, sizeof(UBX_CFG_SAVE));
+		//Save config done to RTC register
+		HAL_RTCEx_BKUPWrite(&hrtc, RTCbckupGNSS, HAL_RTCEx_BKUPRead(&hrtc, RTCbckupGNSS) | 0x01);
+	}
+}
+
+void LPUART_Transmit_Blocking(const void* data, int len ){
+	const uint8_t* b = data;
+	//Low power stuff
+	LL_LPUART_EnableIT_TXE(LPUART1);
+	HAL_SuspendTick();
+	LL_LPM_EnableSleep( );
+	while (len--) {
+		LL_LPUART_TransmitData8(LPUART1, *b++);
+		while(LL_LPUART_IsActiveFlag_TXE(LPUART1)){
+			__WFI( );
+			//Transmit flag should wake here
+		}
+	}
+	LL_LPUART_DisableIT_TXE(LPUART1);
+	HAL_ResumeTick();
 }
 
 void gnss_parse(uint8_t byte_read){

@@ -77,6 +77,8 @@ void   MX_USART1_UART_Init(void);
 
 #define ProjectVersion 01
 
+#define RTCbckupGNSS 0x00
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

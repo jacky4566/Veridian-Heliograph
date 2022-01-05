@@ -16,8 +16,9 @@ typedef enum
 {
   gnss_rate_fast,
   gnss_rate_slow,
+  gnss_rate_sleep,
   gnss_rate_stop
-} gnss_power_req_t;
+} gnss_power_t;
 
 typedef enum
 {
@@ -32,7 +33,7 @@ typedef enum
 
 //External functions
 void gnss_Init( void );
-void gnss_power_req ( gnss_power_req_t );
+void gnss_power_req ( gnss_power_t );
 
 //IRQ
 void LPUART_CharReception_Callback(void);
