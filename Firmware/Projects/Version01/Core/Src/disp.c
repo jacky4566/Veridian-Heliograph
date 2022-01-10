@@ -38,6 +38,7 @@ uint32_t lcdShadow[LCD_ROWS][LCD_COLS_32]; 	//Previously on the screen
 uint32_t lcdBuffer[LCD_ROWS][LCD_COLS_32]; 	//Currently on the screen
 uint8_t spiBuffer[SPIBUFFERSIZE]; 			//Feeds SPI DMA, Maximum size
 uint8_t displayCycler = 0;					//Cycles through various displays
+disp_rotation_enum dispRotation;			//Keep track of our display rotation
 
 /*Private Functions*/
 void clearMem( void );
@@ -65,7 +66,7 @@ void clearMem( void ){
 void draw( void ){
 	//Draw stuff to lcdBuffer
 	switch(displayCycler){
-	case 0:
+		case 0:
 
 		break;
 	default:
@@ -74,7 +75,8 @@ void draw( void ){
 }
 
 void incDispCycler(){
-	if (NUMDisplays <= ++displayCycler){
+	displayCycler++;
+	if (displayCycler >= NUMDisplays){
 		displayCycler = 0;
 	}
 }
@@ -197,10 +199,14 @@ void setPixel(uint16_t x, uint16_t y, uint8_t color)
 	}
 }
 
+void setRotation( disp_rotation_enum newState ){
+	dispRotation = newState;
+}
+
 void fillBuffer(){
 	//write command to buffer
-	uint16_t spiByteToWrite = 0;
-	spiBuffer[spiByteToWrite++] = CMD_WRITE;
+	uint16_t spiBufferPtr = 0;
+	spiBuffer[spiBufferPtr++] = CMD_WRITE;
 
 	//Inspects lcdShadow and lcdBuffer, copies lcdBuffer to spiBuffer
 	for(uint8_t i = 0; i < LCD_ROWS; i++){ //For Each row
@@ -208,34 +214,32 @@ void fillBuffer(){
 			if (lcdShadow[i][j] != lcdBuffer[i][j]){ //if elements dont match
 				//write row to buffer
 				//write line number
-				spiBuffer[spiByteToWrite++] = i;
+				spiBuffer[spiBufferPtr++] = i;
 				//write data
 				for(uint8_t k = 0; k < LCD_COLS_32; k++){
-					memcpy(&spiBuffer[spiByteToWrite++], &lcdBuffer[i][k], sizeof(lcdBuffer[i][k]));
+					memcpy(&spiBuffer[spiBufferPtr++], &lcdBuffer[i][k], sizeof(lcdBuffer[i][k]));
 				}
 				//write trailer
-				spiBuffer[spiByteToWrite++] = CMD_TRAIL;
+				spiBuffer[spiBufferPtr++] = CMD_TRAIL;
 				break;
 			}
 		}
 	}
 
 	//write trail to buffer
-	spiByteToWrite = 0;
-	spiBuffer[spiByteToWrite] = CMD_TRAIL;
+	spiBufferPtr = 0;
+	spiBuffer[spiBufferPtr] = CMD_TRAIL;
 
 	//Start transfer
-	startSPI(spiByteToWrite);
+	startSPI(spiBufferPtr);
 
 	//Copy buffer to shadow
 	memcpy(lcdShadow, &lcdBuffer, sizeof(lcdBuffer));
 }
 
-void startSPI(uint16_t spiByteToWrite){
+void startSPI(uint16_t spiBytesToWrite){
 	//If there is enough in the buffer
-	if (spiByteToWrite <= (CMD_WRITE_BYTES + CMD_TRAIL_BYTES)){
+	if (spiBytesToWrite <= (CMD_WRITE_BYTES + CMD_TRAIL_BYTES)){
 		return;
 	}
 }
-
-

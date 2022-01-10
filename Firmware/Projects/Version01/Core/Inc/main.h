@@ -72,6 +72,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define GPSEN_Pin GPIO_PIN_15
+#define GPSEN_GPIO_Port GPIOB
 void   MX_USART1_UART_Init(void);
 /* USER CODE BEGIN Private defines */
 

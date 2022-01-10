@@ -49,7 +49,6 @@ void SPI_Start( void );
 void myAppReadyStop( void );
 
 void my_app_Init(void){
-	APP_DBG_MSG("Magic Number 2 \n");
 	//Setup ACCEL
 
 	//Start GNSS
@@ -101,13 +100,13 @@ void BSP_Start(void){
 	}
 
 	//Set new GNSS power states
-	if (VBatmV > 4000){
+	/*if (VBatmV > 4000){
 		gnss_power_req(gnss_rate_fast);
 	}else if (VBatmV > 2000){
 		gnss_power_req(gnss_rate_slow);
 	}else{
 		gnss_power_req(gnss_rate_stop);
-	}
+	}*/
 
 	//BLE on/off
 	if (VBatmV > 3000){

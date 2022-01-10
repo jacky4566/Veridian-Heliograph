@@ -71,16 +71,18 @@ volatile  uint8_t rx_buffer[96];
 volatile uint16_t parser_pos;
 volatile uint8_t checksum_buffer[2];
 
+uint8_t incomingByte;
+
 //Private Functions Declarations
 void gnss_parse( uint8_t );
 void gnss_timer_return( void );
 void GPSStart( void );
 void GPSStop( void );
 void UBX_CFG( void );
-void LPUART_Transmit_Blocking( const void* uint8_t, int);
+void LPUART_Transmit_Blocking( uint8_t* , int);
 uint16_t Checksum( uint8_t*, uint16_t );
 
-//Temporary
+//External Handles
 extern UART_HandleTypeDef huart1;
 extern RTC_HandleTypeDef hrtc;
 
@@ -93,7 +95,9 @@ void gnss_Init( void ){
 	gnss_power_req(gnss_rate_fast);
 
 	//Send config
-	UBX_CFG();
+	//UBX_CFG();
+
+	HAL_UART_Receive_IT(&huart1, incomingByte, 1);
 	return;
 }
 
@@ -148,7 +152,6 @@ void gnss_timer_return(void){
 
 
 void GPSStart(){
-	// HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET); //Set Pin HIGH
 	if (!LL_LPUART_IsEnabled(LPUART1)){
 		LL_LPUART_Enable(LPUART1);
 		while((!(LL_LPUART_IsActiveFlag_TEACK(LPUART1))) || (!(LL_LPUART_IsActiveFlag_REACK(LPUART1)))){}
@@ -161,7 +164,7 @@ void GPSStop(){
 }
 
 void UBX_CFG(){
-	if (!(HAL_RTCEx_BKUPRead(&hrtc, RTCbckupGNSS) & 0x01)){ //check if we are already set
+	//if (!(HAL_RTCEx_BKUPRead(&hrtc, RTCbckupGNSS) & 0x01)){ //check if we are already set
 		//Sends the commands to inialize Ublox chips
 		LPUART_Transmit_Blocking(UBX_CFG_GNSS, sizeof(UBX_CFG_GNSS));
 		LPUART_Transmit_Blocking(UBX_NAV_GGA_OFF, sizeof(UBX_NAV_GGA_OFF));
@@ -176,24 +179,17 @@ void UBX_CFG(){
 		LPUART_Transmit_Blocking(UBX_CFG_SAVE, sizeof(UBX_CFG_SAVE));
 		//Save config done to RTC register
 		HAL_RTCEx_BKUPWrite(&hrtc, RTCbckupGNSS, HAL_RTCEx_BKUPRead(&hrtc, RTCbckupGNSS) | 0x01);
-	}
+	//}
 }
 
-void LPUART_Transmit_Blocking(const void* data, int len ){
-	const uint8_t* b = data;
-	//Low power stuff
-	LL_LPUART_EnableIT_TXE(LPUART1);
-	HAL_SuspendTick();
-	LL_LPM_EnableSleep( );
-	while (len--) {
-		LL_LPUART_TransmitData8(LPUART1, *b++);
-		while(LL_LPUART_IsActiveFlag_TXE(LPUART1)){
-			__WFI( );
-			//Transmit flag should wake here
+void LPUART_Transmit_Blocking(uint8_t data[], int len ){
+	for (int x = 0; x < len; x++) {
+		LL_LPUART_TransmitData8(LPUART1, data[x]);
+		while(!LL_LPUART_IsActiveFlag_TXE(LPUART1)){
+			//TODO: Not block
 		}
 	}
-	LL_LPUART_DisableIT_TXE(LPUART1);
-	HAL_ResumeTick();
+	return;
 }
 
 void gnss_parse(uint8_t byte_read){
@@ -227,6 +223,7 @@ void gnss_parse(uint8_t byte_read){
 	  if (computed_checksum == received_checksum) {
 		  //Data is good
 		  memcpy(&ubx_nav_pvt_parsed,(uint8_t*) &rx_buffer, UBX_PVT_LEN);
+		  HAL_UART_Transmit(&huart1, "HUZZAH\n", 7, 1000);
 	  }
 	  parser_pos = 0;
 	}
@@ -310,8 +307,15 @@ void LPUART_CharReception_Callback(void)
 	while (LL_LPUART_IsActiveFlag_RXNE(LPUART1)){ //empty FIFO
 	  	/* Read Received character. RXNE flag is cleared by reading of RDR register */
 		char newByte = LL_LPUART_ReceiveData8(LPUART1);
-		//HAL_UART_Transmit(&huart1, &newByte, 1, 1000);
-		//APP_DBG_MSG("GNSS Char %c \n", newByte);
-		//gnss_parse((uint8_t)LL_LPUART_ReceiveData8(LPUART1));
+		HAL_UART_Transmit(&huart1, &newByte, 1, 100);
+		//gnss_parse((uint8_t)newByte);
+	}
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if (huart->Instance == USART1){
+		LL_LPUART_TransmitData8(LPUART1, incomingByte);
+		HAL_UART_Receive_IT(&huart1, incomingByte, 1);
 	}
 }
