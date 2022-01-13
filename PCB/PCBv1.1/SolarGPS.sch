@@ -354,18 +354,6 @@ F 3 "~" H 8475 5275 50  0001 C CNN
 	1    8475 5275
 	1    0    0    1   
 $EndComp
-$Comp
-L Device:D_Zener_Small D4
-U 1 1 619FB2B4
-P 1100 6050
-F 0 "D4" H 1100 6200 50  0000 L CNN
-F 1 "5.1V" H 1050 6125 50  0000 L CNN
-F 2 "Diode_SMD:D_SOD-323_HandSoldering" V 1100 6050 50  0001 C CNN
-F 3 "~" V 1100 6050 50  0001 C CNN
-F 4 "BZT52C5V1T-TP" H 1100 6050 50  0001 C CNN "Part"
-	1    1100 6050
-	-1   0    0    -1  
-$EndComp
 Text GLabel 3000 6000 1    50   Input ~ 0
 VSTOR
 $Comp
@@ -1002,14 +990,6 @@ F 3 "" H 12350 2075 50  0001 C CNN
 	1    12350 2075
 	0    -1   -1   0   
 $EndComp
-Wire Wire Line
-	1200 6050 1350 6050
-Connection ~ 1350 6050
-Wire Wire Line
-	1350 6050 1350 6200
-Wire Wire Line
-	1000 6050 1000 6200
-Connection ~ 1000 6200
 $Comp
 L power:GND #PWR0104
 U 1 1 61AB92EC
@@ -1058,8 +1038,6 @@ F 4 "B0530WS" H 1725 5425 50  0001 C CNN "Part"
 $EndComp
 Wire Wire Line
 	1625 5425 1350 5425
-Wire Wire Line
-	1350 5425 1350 6050
 Wire Wire Line
 	1625 4900 1350 4900
 Wire Wire Line
@@ -1424,4 +1402,8 @@ Wire Wire Line
 	4275 7050 4275 7200
 Text GLabel 2275 2275 1    50   Input ~ 0
 VDD
+Text Notes 1700 7500 0    50   ~ 0
+Also See AEM10300
+Wire Wire Line
+	1350 5425 1350 6200
 $EndSCHEMATC
