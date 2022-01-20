@@ -845,7 +845,7 @@ F 0 "J7" V 7839 7087 50  0000 R CNN
 F 1 "Screw_Terminal_01x01" V 7748 7087 50  0000 R CNN
 F 2 "Veridian-Library-KiCad:Right Angle Screw Terminal M3M4" H 7875 7175 50  0001 C CNN
 F 3 "~" H 7875 7175 50  0001 C CNN
-F 4 "7781" V 7875 7175 50  0001 C CNN "Part"
+F 4 "7792" V 7875 7175 50  0001 C CNN "Part"
 F 5 "Keystone Electronics" V 7875 7175 50  0001 C CNN "Manufacture"
 	1    7875 7175
 	0    -1   -1   0   
