@@ -1,49 +1,70 @@
 package com.example.heliographapp;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
-
+import android.Manifest;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
 
-public class MainActivity extends AppCompatActivity {
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.UiSettings;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
-    private Button btn1, btn2;
+import java.util.List;
+
+import pub.devrel.easypermissions.AppSettingsDialog;
+import pub.devrel.easypermissions.EasyPermissions;
+import pub.devrel.easypermissions.PermissionRequest;
+
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, EasyPermissions.PermissionCallbacks {
+
+    private String[] perms = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
+    private boolean hasPermissions = false;
+
+    private GoogleMap mMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.main_view);
 
-        btn1 = (Button) findViewById(R.id.btn1);
-        btn2 = (Button) findViewById(R.id.btn2);
+        if (EasyPermissions.hasPermissions(this, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) {
+            hasPermissions = true;
+        }else{
+            EasyPermissions.requestPermissions(this, getString(R.string.rationale_location), 1, perms);
+        }
 
-        btn1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                addFragment(new SettingsFragment(), false, "one");
-            }
-        });
-
-        btn2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                addFragment(new MapFragment(), false, "one");
-            }
-        });
+        // Get a handle to the fragment and register the callback.
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
     }
 
-    public void addFragment(Fragment fragment, boolean addToBackStack, String tag) {
-        FragmentManager manager = getSupportFragmentManager();
-        FragmentTransaction ft = manager.beginTransaction();
-
-        if (addToBackStack) {
-            ft.addToBackStack(tag);
+    @Override
+    public void onMapReady(GoogleMap mMap) {
+        this.mMap = mMap;
+        UiSettings uiSettings = mMap.getUiSettings();
+        uiSettings.setRotateGesturesEnabled(true);
+        uiSettings.setTiltGesturesEnabled(true);
+        uiSettings.setMyLocationButtonEnabled(true);
+        uiSettings.setMapToolbarEnabled(true);
+        uiSettings.setCompassEnabled(true);
+        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+        if (hasPermissions) {
+            mMap.setMyLocationEnabled(true);
         }
-        ft.replace(R.id.container_frame_back, fragment, tag);
-        ft.commitAllowingStateLoss();
+    }
+
+
+    @Override
+    public void onPermissionsGranted(int requestCode, List<String> list) {
+        if (mMap != null) {
+            mMap.setMyLocationEnabled(true);
+        }
+    }
+
+    @Override
+    public void onPermissionsDenied(int requestCode, List<String> list) {
+
     }
 }
