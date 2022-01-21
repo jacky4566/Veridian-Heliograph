@@ -547,7 +547,7 @@ void MX_APPE_Process(void)
 void UTIL_SEQ_Idle( void )
 {
 #if ( CFG_LPM_SUPPORTED == 1)
-  //UTIL_LPM_EnterLowPower( );
+  UTIL_LPM_EnterLowPower( );
 #endif
   return;
 }

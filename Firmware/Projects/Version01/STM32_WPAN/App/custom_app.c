@@ -120,12 +120,10 @@ void Custom_STM_App_Notification(Custom_STM_App_Notification_evt_t *pNotificatio
       break;
 
   /* OTAService */
-    case CUSTOM_STM_REBOOT_WRITE_EVT:
-      /* USER CODE BEGIN CUSTOM_STM_REBOOT_WRITE_EVT */
-        *(uint32_t*)SRAM1_BASE = *(uint32_t*)pNotification->DataTransfered.pPayload;
-        NVIC_SystemReset();
-        break;
-      /* USER CODE END CUSTOM_STM_REBOOT_WRITE_EVT */
+    case CUSTOM_STM_OTABR_WRITE_EVT:
+      /* USER CODE BEGIN CUSTOM_STM_OTABR_WRITE_EVT */
+
+      /* USER CODE END CUSTOM_STM_OTABR_WRITE_EVT */
       break;
 
     default:

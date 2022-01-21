@@ -40,7 +40,7 @@ typedef enum
   /* BatteryService */
   CUSTOM_STM_BATLVL,
   /* OTAService */
-  CUSTOM_STM_REBOOT,
+  CUSTOM_STM_OTABR,
 } Custom_STM_Char_Opcode_t;
 
 typedef enum
@@ -51,8 +51,8 @@ typedef enum
   CUSTOM_STM_LSC_READ_EVT,
   /* BatteryLevel */
   CUSTOM_STM_BATLVL_READ_EVT,
-  /* RebootCharacteristic */
-  CUSTOM_STM_REBOOT_WRITE_EVT,
+  /* OTABootRequest */
+  CUSTOM_STM_OTABR_WRITE_EVT,
 
   CUSTOM_STM_BOOT_REQUEST_EVT
 } Custom_STM_Opcode_evt_t;
