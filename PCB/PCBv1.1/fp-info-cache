@@ -1,4 +1,4 @@
-20735423953754567
+20775165038755146
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -52205,6 +52205,13 @@ heatsink
 0
 2
 1
+Heliograph
+M4_RA_7792
+
+
+0
+4
+1
 Inductor_SMD
 L_6.3x6.3_H3
 Choke, SMD, 6.3x6.3mm 3mm height
@@ -57071,13 +57078,6 @@ EVQP7C01P
 4
 2
 Margo_Lib
-FFC_10POS_0.5
-
-
-0
-10
-10
-Margo_Lib
 FUSE_3557-2
 
 
@@ -57462,6 +57462,13 @@ U.FL-R-SMT-1
 0
 3
 2
+Margo_Lib
+USB_Micro-B_GCT_USB3076-30-A
+GCT Micro USB https://gct.co/files/drawings/usb3076.pdf
+Micro-USB SMD Typ-B GCT
+0
+11
+6
 Margo_Lib
 VREG_TPS63802DLAR
 
@@ -60297,6 +60304,13 @@ Hamamatsu SiPM
 0
 2
 2
+OptoDevice
+Kingbright_KPS-3227
+3.2mmx2.7mm, light sensor, https://www.kingbright.com/attachments/file/psearch/000/00/00/KPS-3227SP1C(Ver.16).pdf
+KPS-3227 Ambient Light Photo Sensor
+0
+4
+4
 OptoDevice
 Kingbright_KPS-5130
 http://www.kingbright.com/attachments/file/psearch/000/00/00/KPS-5130PD7C(Ver.14).pdf
