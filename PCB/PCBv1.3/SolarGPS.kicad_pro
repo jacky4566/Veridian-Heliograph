@@ -45,7 +45,7 @@
         "silk_text_upright": false,
         "zones": {
           "45_degree_only": false,
-          "min_clearance": 0.19999999999999998
+          "min_clearance": 0.0
         }
       },
       "diff_pair_dimensions": [
@@ -390,7 +390,7 @@
         "microvia_drill": 0.1,
         "name": "VDD",
         "nets": [
-          "VBATMID",
+          "VBAT",
           "VDD"
         ],
         "pcb_color": "rgba(0, 0, 0, 0.000)",
