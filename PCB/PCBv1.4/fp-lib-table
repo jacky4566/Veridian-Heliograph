@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name "Heliograph")(type "KiCad")(uri "C:/GitHub/Veridian-Heliograph/PCB/Library/Heliograph.pretty")(options "")(descr ""))
+)
