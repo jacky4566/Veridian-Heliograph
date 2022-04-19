@@ -1,3 +1,0 @@
-(sym_lib_table
-  (lib (name SolarGPS-rescue)(type Legacy)(uri ${KIPRJMOD}/SolarGPS-rescue.lib)(options "")(descr ""))
-)
