@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name "SolarGPS-rescue")(type "Legacy")(uri "${KIPRJMOD}/SolarGPS-rescue.lib")(options "")(descr ""))
+  (lib (name "Heliograph")(type "KiCad")(uri "C:/GitHub/Veridian-Heliograph/PCB/Library/Heliograph.kicad_sym")(options "")(descr ""))
+)
