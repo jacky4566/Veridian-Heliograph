@@ -82,7 +82,6 @@ void LED() {
 void drawPaper() {
   static uint32_t lastDisplay = 30;
   if ((sys1Hz - lastDisplay >= 30) && (vccmV > 3000)) {
-    digitalWrite(pin_LED, HIGH);
     display.setRotation(0);
     display.setFont(&FreeMonoBold12pt7b);
     display.setTextColor(GxEPD_BLACK);
@@ -100,15 +99,12 @@ void drawPaper() {
     }
     while (display.nextPage());
     display.hibernate();
-    digitalWrite(pin_LED, LOW);
     lastDisplay = sys1Hz;
   }
 }
 
 void LCDBusyCallback(){
-  digitalWrite(pin_LED, LOW);
   cpuSleep(SLEEP_MODE_IDLE);
-  digitalWrite(pin_LED, HIGH);
 }
 
 void goToSleep() {
