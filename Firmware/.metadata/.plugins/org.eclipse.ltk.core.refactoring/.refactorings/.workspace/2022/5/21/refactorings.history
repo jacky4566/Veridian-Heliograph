@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Delete resource &apos;STM32L031G6U6_Demo/Drivers/Adafruit-GFX-Library-master&apos;" deleteContents="false" description="Delete resource &apos;STM32L031G6U6_Demo/Drivers/Adafruit-GFX-Library-master&apos;" element1="/STM32L031G6U6_Demo/Drivers/Adafruit-GFX-Library-master" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1652739557780"/>
+</session>
