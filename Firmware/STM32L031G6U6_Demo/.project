@@ -31,9 +31,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>Drivers/SharpMemLCD</name>
+			<name>Drivers/GNSSPVT</name>
 			<type>2</type>
-			<location>C:/GitHub/Veridian-Heliograph/Firmware/Drivers/SharpMemLCD</location>
+			<location>C:/GitHub/Veridian-Heliograph/Firmware/Drivers/GNSSPVT</location>
 		</link>
 	</linkedResources>
 </projectDescription>
