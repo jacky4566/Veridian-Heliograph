@@ -13,7 +13,7 @@
 #include "Fonts.h"
 
 //State Machine
-enum LCD_State interal_state = LCD_DONE;
+enum lcd_State interal_state = LCD_READY;
 
 //Handles
 extern SPI_HandleTypeDef hspi1; //Get the SPI handle from main
@@ -28,7 +28,12 @@ static uint8_t LCD_BUFFER[LCD_RES_PX_X_b][LCD_RES_PX_Y];
 static uint8_t Line_Tracker[LCD_RES_PX_Y_b]; //Used to keep track of lines to update
 static uint8_t SPIBuffer[LCD_RES_PX_X_b + 2];
 
-bool lcd_hasData() {
+void lcd_Init(void) {
+	SPIBuffer[0] = MLCD_WR;
+	SPIBuffer[sizeof(SPIBuffer) - 1] = MLCD_WR;
+}
+
+bool lcd_hasData(void) {
 	for (uint8_t i = 0; i < sizeof(Line_Tracker); i++) {
 		if (Line_Tracker[i] != 0x00) {
 			//we have some data to send
@@ -38,7 +43,7 @@ bool lcd_hasData() {
 	return false;
 }
 
-uint16_t getNextLine() {
+uint16_t getNextLine(void) {
 	uint16_t nextLine = 0;
 	for (uint8_t i = 0; i < sizeof(Line_Tracker); i++) {
 		for (uint8_t mask = 0x80; mask != 0; mask >>= 1) {
@@ -51,45 +56,13 @@ uint16_t getNextLine() {
 	return 0xffff;
 }
 
-enum LCD_State lcd_draw(void) {
-	switch (interal_state) {
-	case LCD_SENDING:
-		//We are waiting for DMA/SPI to finish, call again later
-		break;
-	case LCD_READY:
-		if (!lcd_hasData()) {
-			//No data to send, DONE
-			interal_state = LCD_DONE;
-			//de-initialize SPI
-			HAL_GPIO_WritePin(LCD_CS_PIN, LCD_CS_PORT, GPIO_PIN_RESET);
-			break;
-		}
-		//start a new transfer
-		interal_state = LCD_SENDING;
-		SPIBuffer[0] = MLCD_WR;
-		memcpy();
-		HAL_SPI_Transmit_DMA(&hspi1, SPIBuffer, LCD_RES_PX_X_b + 2);
-		break;
-	case LCD_DONE:
-		if (lcd_hasData()) {
-			//We have data to send
-			interal_state = LCD_READY;
-			//initialize SPI
-			HAL_GPIO_WritePin(LCD_CS_PIN, LCD_CS_PORT, GPIO_PIN_SET);
-		}
-		break;
-	default:
-		break;
-	}
-	return interal_state;
-}
-
 void lcd_clear(void) {
 	SPIBuffer[0] = MLCD_CM;
 	SPIBuffer[1] = MLCD_TR;
 	HAL_GPIO_WritePin(LCD_CS_PIN, LCD_CS_PORT, GPIO_PIN_SET);
 	HAL_SPI_Transmit(&hspi1, SPIBuffer, 2, 10); //No DMA here
 	HAL_GPIO_WritePin(LCD_CS_PIN, LCD_CS_PORT, GPIO_PIN_RESET);
+	SPIBuffer[0] = MLCD_WR;
 }
 
 void lcd_drawpoint(uint16_t x, uint16_t y, bool bDraw) {
@@ -182,9 +155,64 @@ void lcd_print_string(uint8_t x, uint8_t y, const uint8_t *p, uint8_t size) {
 		x += size / 2;
 		p++;
 	}
+}
 
+static void lcd_SPI1_Init(void) {
+	hspi1.Instance = SPI1;
+	hspi1.Init.Mode = SPI_MODE_MASTER;
+	hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+	hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+	hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+	hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+	hspi1.Init.NSS = SPI_NSS_SOFT;
+	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;  //16MHz HSI / 16DIV = 1MHz SPI
+	hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+	hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+	hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+	hspi1.Init.CRCPolynomial = 7;
+	HAL_SPI_Init(&hspi1);
+}
+
+static void lcd_SPI1_DeInit(void) {
+	HAL_SPI_DeInit(&hspi1);
+}
+
+void lcd_DoTX() {
+	if (lcd_hasData()) {
+		//start next transfer
+		memcpy(&SPIBuffer[1], &LCD_BUFFER[0][getNextLine()], LCD_RES_PX_X_b); //could maybe swap these commands for speed
+		HAL_SPI_Transmit_DMA(&hspi1, SPIBuffer, LCD_RES_PX_X_b + 2);
+	} else {
+		//Done
+		HAL_GPIO_WritePin(LCD_CS_PIN, LCD_CS_PORT, GPIO_PIN_RESET);
+		lcd_SPI1_DeInit();
+		interal_state = LCD_READY;
+	}
+}
+
+enum lcd_State lcd_draw(void) {
+	if (interal_state == LCD_SENDING) {
+		//We are waiting for DMA/SPI to finish, call again later
+		return LCD_SENDING;
+	}
+	if (!lcd_hasData()) {
+		//No data. still ready to send
+		return LCD_READY;
+	} else {
+		if (HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_RESET){
+			//SPI is not ready for us
+			return LCD_READY;
+		}
+		//start a new transfer
+		interal_state = LCD_SENDING;
+		lcd_SPI1_Init();
+		HAL_GPIO_WritePin(LCD_CS_PIN, LCD_CS_PORT, GPIO_PIN_SET);
+		lcd_DoTX();
+
+	}
+	return interal_state;
 }
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
-	interal_state = LCD_READY; //Transfer done, ready for next call
+	lcd_DoTX();
 }

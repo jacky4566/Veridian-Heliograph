@@ -19,14 +19,14 @@
 #define LCD_CS_PIN 5		//Replace Later
 #define LCD_CS_PORT 5		//Replace Later
 
-enum LCD_State {
-	LCD_DONE, 		//No more data to send
-	LCD_SENDING, 	//SPI, DMA actively working
-	LCD_READY		//Ready for next call
+enum lcd_State {
+	LCD_READY, 		//No more data to send
+	LCD_SENDING 	//SPI, DMA actively working
 };
 
+void lcd_Init(void); 		//Init Display
 void lcd_clear(void); 		//Clear Display
-enum LCD_State lcd_draw(void); 		//Draws lines, Call until return done
+enum lcd_State lcd_draw(void); 		//Draws lines, Call until return done
 
 void lcd_drawpoint(uint16_t x,uint16_t y,bool bDraw);
 void lcd_fillRectByXY(uint16_t x0,uint16_t y0,uint16_t x1,uint16_t y1,bool bDraw);
