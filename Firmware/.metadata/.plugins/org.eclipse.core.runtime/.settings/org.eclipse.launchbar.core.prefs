@@ -1,0 +1,9 @@
+LaunchTargetManager/org.eclipse.launchbar.core.launchTargetType.local,Local/arch=x86_64
+LaunchTargetManager/org.eclipse.launchbar.core.launchTargetType.local,Local/name=Local
+LaunchTargetManager/org.eclipse.launchbar.core.launchTargetType.local,Local/os=win32
+configDescList=org.eclipse.cdt.dsf.gdb.gdbRemotedescriptorType\:STM32L031G6U6_Demo Debug,org.eclipse.cdt.dsf.gdb.gdbRemotedescriptorType\:G6u6_Dev Debug
+eclipse.preferences.version=1
+org.eclipse.cdt.dsf.gdb.gdbRemotedescriptorType\:G6u6_Dev\ Debug/activeLaunchMode=run
+org.eclipse.cdt.dsf.gdb.gdbRemotedescriptorType\:G6u6_Dev\ Debug/activeLaunchTarget=null\:---
+org.eclipse.launchbar.core.descriptorType.default\:STM32L031G6U6_Demo\ Debug/activeLaunchMode=run
+org.eclipse.launchbar.core.descriptorType.default\:STM32L031G6U6_Demo\ Debug/activeLaunchTarget=org.eclipse.launchbar.core.launchTargetType.local\:Local
