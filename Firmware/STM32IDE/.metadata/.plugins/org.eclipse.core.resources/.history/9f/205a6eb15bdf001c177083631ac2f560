@@ -1,0 +1,18 @@
+/*
+ * analogs.h
+ *
+ *  Created on: May 28, 2022
+ *      Author: jacks
+ */
+
+#ifndef INC_ANALOGS_H_
+#define INC_ANALOGS_H_
+
+//External Variables
+extern int16_t superCapmV;
+extern int16_t tempC;
+extern int16_t counter;
+
+void startADC();
+
+#endif /* INC_ANALOGS_H_ */

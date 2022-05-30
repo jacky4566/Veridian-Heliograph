@@ -1,0 +1,257 @@
+/*
+ * LS013B7DH03.c
+ *
+ *  Created on: May 16, 2022
+ *      Author: Jackson-E15Gen3
+ */
+
+#include "main.h"
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+#include "ls013b7dh03.h"
+#include "gfxfont.h"
+
+//Handles
+extern SPI_HandleTypeDef hspi1; //Get the handle from main
+extern LPTIM_HandleTypeDef hlptim1; //Get the handle from main
+
+//Commands
+static const uint8_t MLCD_WR = 0x01; //MLCD write line command
+static const uint8_t MLCD_CM = 0x04; //MLCD clear memory command
+static const uint8_t MLCD_TR = 0x00; //MLCD trailer
+
+//Buffers
+static uint8_t LCD_BUFFER[LCD_RES_PX_Y][LCD_RES_PX_X_b];
+static uint8_t Line_Tracker[LCD_RES_PX_Y_b]; //Used to keep track of lines to update
+static uint8_t SPIBuffer[LCD_RES_PX_X_b + 2] = { 0 };
+char strbuffer[20];
+
+//Variables
+static uint8_t rotation;
+static uint8_t cursor_y;
+static uint8_t cursor_x;
+static GFXfont *gfxFontPtr;
+
+//State Machine
+volatile enum lcd_State_enum lcd_state = LCD_READY;
+
+//Functions
+void lcd_init() {
+	HAL_LPTIM_PWM_Start(&hlptim1, 2047, 1023); //32768 DIV16 DIV2048 1HZ
+	HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_SET); //enable display
+	lcd_clear();
+}
+
+void lcd_SetCursor(uint8_t x, uint8_t y) {
+	cursor_x = x;
+	cursor_y = y;
+}
+
+void lcd_SetFont(GFXfont *f) {
+	gfxFontPtr = (GFXfont*) f;
+}
+
+uint8_t lcd_writeChar(uint8_t x, uint9_t y, uint8_t c) {
+	if (c >= (uint8_t) gfxFontPtr->first && c <= (uint8_t) gfxFontPtr->last) { //Char present in this font?
+		c -= (uint8_t) (gfxFontPtr->first);
+		GFXglyph glyph = gfxFontPtr->glyph[c];
+		uint8_t *bitmap = gfxFontPtr->bitmap;
+
+		uint16_t bo = glyph.bitmapOffset;
+		uint8_t w = glyph.width, h = glyph.height;
+		int8_t xo = glyph.xOffset, yo = glyph.yOffset;
+		uint8_t xx, yy, bits = 0, bit = 0;
+
+		for (yy = 0; yy < h; yy++) {
+			for (xx = 0; xx < w; xx++) {
+				if (!(bit++ & 7)) {
+					bits = bitmap[bo++];
+				}
+				if (bits & 0x80) {
+					lcd_drawPixel(x + xo + xx, y + yo + yy, LCD_BLACK);
+				}
+				bits <<= 1;
+			}
+		}
+
+		return (uint8_t) glyph.xAdvance; //Advance cursor
+	}
+}
+
+void lcd_print(int n) {
+	int bufPointer = 0;
+	while (bufPointer < n) {
+		lcd_writeChar(cursor_x, cursor_y, strbuffer[bufPointer++]);
+	}
+}
+
+void lcd_drawPixel(uint8_t x, uint8_t y, uint8_t bDraw) {
+	if (x >= LCD_RES_PX_X || y >= LCD_RES_PX_Y)
+		return;
+
+	uint8_t XbitInByte = (0x01 << (x % 8));
+	uint8_t YbitInByte = (0x01 << (y % 8));
+//check if pixel needs updating
+	if (bDraw == LCD_WHITE) { //Set bit
+		if ((LCD_BUFFER[y][x / 8] & XbitInByte) == 0x00) { //bit not set
+			Line_Tracker[y / 8] |= YbitInByte; 	//transmit this line
+			LCD_BUFFER[y][x / 8] |= XbitInByte; 	//set bit
+		}
+	} else {
+		if (LCD_BUFFER[y][x / 8] & XbitInByte) { //bit is set
+			Line_Tracker[y / 8] |= YbitInByte; 	//transmit this line
+			LCD_BUFFER[y][x / 8] &= ~XbitInByte; //clear bit
+		}
+	}
+}
+
+void lcd_togglePixel(uint8_t x, uint8_t y) {
+	if (x >= LCD_RES_PX_X || y >= LCD_RES_PX_Y)
+		return;
+
+	uint8_t XbitInByte = (0x01 << (x % 8));
+	uint8_t YbitInByte = (0x01 << (y % 8));
+	if ((LCD_BUFFER[y][x / 8] & XbitInByte) == 0x00) { //bit not set
+		Line_Tracker[y / 8] |= YbitInByte; 	//transmit this line
+		LCD_BUFFER[y][x / 8] |= XbitInByte; 	//set bit
+	} else {
+		Line_Tracker[y / 8] |= YbitInByte; //transmit this line
+		LCD_BUFFER[y][x / 8] &= ~XbitInByte; //clear bit
+	}
+}
+
+void lcd_drawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t color) {
+	if (x0 == x1) {
+		//Vertical Line
+		for (uint8_t i = y0; i <= y1; i++) {
+			lcd_drawPixel(x0, i, color);
+		}
+	} else if (y0 == y1) {
+		//Horizontal line
+		for (uint8_t i = x0; i <= x1; i++) {
+			lcd_drawPixel(i, y0, color);
+		}
+	} else {
+		//Angled line
+	}
+}
+
+void lcd_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color) {
+//Draw 4 line!
+	lcd_drawLine(x, y, x + w, y, color);			//Bottom
+	lcd_drawLine(x, y, x, y + h, color); 			//Left
+	lcd_drawLine(x + w, y, x + w, y + h, color); 	//Right
+	lcd_drawLine(x, y + h, x + w, y + h, color); 	//Top
+}
+
+void lcd_fillRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color) {
+	for (uint8_t i = y; i < y + h; i++) {
+		lcd_drawLine(x, y + i, x + w, y + i, color);
+	}
+}
+
+void lcd_setRotation(uint8_t newRot) {
+	if (rotation <= 3)
+		rotation = newRot;
+}
+
+static void lcd_SPI1_Init(void) {
+	if (HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_RESET) {
+		Error_Handler();
+	}
+	hspi1.Instance = SPI1;
+	hspi1.Init.Mode = SPI_MODE_MASTER;
+	hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+	hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+	hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+	hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+	hspi1.Init.NSS = SPI_NSS_SOFT;
+	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16; //16MHz HSI / 16DIV = 1MHz SPI
+	hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+	hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+	hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+	hspi1.Init.CRCPolynomial = 7;
+	if (HAL_SPI_Init(&hspi1) != HAL_OK) {
+		Error_Handler();
+	}
+}
+
+static void lcd_SPI1_DeInit(void) {
+	HAL_SPI_DeInit(&hspi1);
+}
+
+void lcd_clear(void) {
+	SPIBuffer[0] = MLCD_CM;
+	SPIBuffer[1] = MLCD_TR;
+	HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_SET);
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) &SPIBuffer, 2, HAL_MAX_DELAY);
+	HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_RESET);
+
+//Clear buffer
+	for (uint8_t y = 0; y < LCD_RES_PX_Y; y++) {
+		for (uint8_t x = 0; x < LCD_RES_PX_X_b; x++) {
+			LCD_BUFFER[y][x] = 0xff;
+		}
+	}
+}
+
+static bool lcd_hasData(void) {
+	for (uint8_t i = 0; i < sizeof(Line_Tracker); i++) {
+		if (Line_Tracker[i] != 0x00) {
+			//we have some data to send
+			return true;
+		}
+	}
+	return false;
+}
+
+static void lcd_DoTX() {
+	static uint8_t linePointer = 0;
+	if (lcd_hasData()) {
+		//start next transfer
+		while (1) {
+			uint8_t lineNum = linePointer + 1;
+			uint8_t lineBitMask = (0x01 << (linePointer % 8));
+			uint8_t lineByte = linePointer / 8;
+			if (Line_Tracker[lineByte] & lineBitMask) {
+				//Send the line
+				SPIBuffer[0] = lineNum;
+				memcpy(&SPIBuffer[1], &LCD_BUFFER[linePointer][0], LCD_RES_PX_X_b);
+				HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) &SPIBuffer, sizeof(SPIBuffer));
+				Line_Tracker[lineByte] &= ~lineBitMask; //clear bit
+				linePointer++;
+				return;
+			} else if (linePointer > LCD_RES_PX_Y) {
+				linePointer = 0;
+			} else {
+				linePointer++;
+			}
+		}
+	} else {
+		//Done
+		HAL_SPI_Transmit(&hspi1, (uint8_t*) &MLCD_TR, sizeof(MLCD_TR), HAL_MAX_DELAY); //send Trailer command
+		HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_RESET);
+		lcd_state = LCD_READY;
+		return;
+	}
+}
+
+enum lcd_State_enum lcd_draw(void) {
+	if (lcd_state == LCD_READY) {
+		//Ready for new transfer
+		if (lcd_hasData()) {
+			//start new transfer
+			lcd_state = LCD_SENDING;
+			HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_SET);
+			HAL_SPI_Transmit(&hspi1, (uint8_t*) &MLCD_WR, sizeof(MLCD_WR), HAL_MAX_DELAY);
+			lcd_DoTX();
+		}
+	}
+	return lcd_state;
+}
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
+	lcd_DoTX();
+}

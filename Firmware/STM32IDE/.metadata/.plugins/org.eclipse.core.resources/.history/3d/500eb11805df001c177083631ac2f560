@@ -1,0 +1,20 @@
+/*
+ * analogs.c
+ *
+ *  Created on: May 28, 2022
+ *      Author: jacks
+ */
+
+#include "main.h"
+
+extern ADC_HandleTypeDef hadc; //Get the handle from main
+
+//Variables
+uint16_t superCapmV;
+
+//Functions
+void startADC(){
+	HAL_ADC_Start(&hadc);
+	HAL_ADC_PollForConversion(&hadc, HAL_MAX_DELAY);
+	raw = HAL_ADC_GetValue(&hadc);
+}

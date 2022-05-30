@@ -22,15 +22,28 @@ typedef enum  {
 	TIME_ONLY
 } GNSS_FixType;
 
+struct locationFix {
+	uint8_t Lat_Deg;
+	uint8_t Long_Deg;
+	uint16_t Lat_Dec;
+	uint16_t Long_Dec;
+	bool NS;
+	bool EW;
+	uint16_t Elevation_M;
+	uint8_t HzAccM;
+};
+
 typedef enum {
-	GNSS_STOP, GNSS_SLOW, GNSS_FAST, GNSS_FULL
+	GNSS_STOP, GNSS_Hot_Hold, GNSS_SLOW, GNSS_FAST
 } GNSS_rate;
 
-#define GNSS_EX_PIN 5		//Replace Later
-#define GNSS_EX_PORT 5		//Replace Later
+extern uint32_t packets;
+extern GNSS_rate lastRate;
+extern struct locationFix LastFix;
 
 //Public Functions
-void GNSS_Setup(GNSS_rate);
+void GNSS_Init();
+void GNSS_Power();
 
 //Time
 uint16_t GNSS_getYear();
@@ -41,18 +54,15 @@ uint8_t GNSS_getMin();
 uint8_t GNSS_getSec();
 
 //Location
-double getLongitude_deg();
-double getLatitude_deg();
-double getMSLHeight_m();
-double getHorizontalAccuracy_m();
-double getGroundSpeed_kph();
-double getMotionHeading_deg();
+uint8_t getGroundSpeed_kph();
+uint8_t getMotionHeading_deg();
 
 //Status
 uint8_t getNumSatellites();
-double getHorizontalAccuracy_m();
 GNSS_FixType getFixType();
 bool isGnssFixOk();
 bool isTimeFullyResolved();
+
+void LPUART_CharReception_Callback();
 
 #endif

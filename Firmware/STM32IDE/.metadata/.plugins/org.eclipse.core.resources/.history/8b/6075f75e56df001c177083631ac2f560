@@ -1,0 +1,39 @@
+/*
+ * analogs.c
+ *
+ *  Created on: May 28, 2022
+ *      Author: jacks
+ */
+
+#include "main.h"
+
+#define VREFINT_CAL_ADDR 	((uint16_t*)((uint32_t)0x1FF80078))
+#define VREFINT_CAL_mV 		((uint32_t)3000)
+#define adc_Channels 		2
+
+extern ADC_HandleTypeDef hadc; //Get the handle from main
+
+//Variables
+static uint32_t ADC_raw[2];
+
+//External Variables
+volatile uint16_t superCapmV;
+volatile uint16_t tempC;
+
+//Functions
+void startADC() {
+	//HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED);
+	HAL_ADCEx_EnableVREFINT();
+	HAL_ADC_Start_DMA(&hadc, &ADC_raw, adc_Channels);
+
+	/*HAL_ADC_Start(&hadc);
+	 HAL_ADC_PollForConversion(&hadc, HAL_MAX_DELAY);
+	 ADC_raw = (uint32_t)HAL_ADC_GetValue(&hadc);
+	 superCapmV = VREFINT_CAL_mV*(*VREFINT_CAL_ADDR)/ADC_raw;
+	 HAL_ADC_Stop(&hadc);
+	 */
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+	superCapmV = VREFINT_CAL_mV * (*VREFINT_CAL_ADDR) / ADC_raw;
+}

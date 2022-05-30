@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;Heliograph_LCD_Dev/Drivers/SharpMemLCD/fonts&apos; to &apos;Fonts&apos;" description="Rename resource &apos;fonts&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="Drivers/SharpMemLCD/fonts" name="Fonts" stamp="1653793070380" updateReferences="true"/>
+</session>

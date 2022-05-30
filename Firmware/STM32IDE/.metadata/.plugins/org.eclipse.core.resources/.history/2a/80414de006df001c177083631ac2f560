@@ -1,0 +1,26 @@
+/*
+ * analogs.c
+ *
+ *  Created on: May 28, 2022
+ *      Author: jacks
+ */
+
+#include "main.h"
+
+#define VREFINT_CAL_ADDR                0x1FFFF7BA  /* datasheet p. 19 */
+
+extern ADC_HandleTypeDef hadc; //Get the handle from main
+
+//Variables
+static uint32_t raw;
+
+//External Variables
+uint16_t superCapmV;
+
+//Functions
+void startADC(){
+	HAL_ADC_Start(&hadc);
+	HAL_ADC_PollForConversion(&hadc, HAL_MAX_DELAY);
+	raw = (uint32_t)HAL_ADC_GetValue(&hadc);
+	superCapmV = raw;
+}

@@ -1,0 +1,27 @@
+/*
+ * myApp.c
+ *
+ *  Created on: May 29, 2022
+ *      Author: jacks
+ */
+
+#include "main.h"
+#include "myApp.h"
+#include <time.h>
+
+extern RTC_HandleTypeDef hrtc;  //Get the handle from main
+
+uint32_t getUnix() {
+	RTC_TimeTypeDef sTime;
+	RTC_DateTypeDef sDate;
+	struct tm tim;
+	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+	tim.tm_year = sDate.Year;
+	tim.tm_mon = sDate.Month - 1;
+	tim.tm_mday = sDate.WeekDay;
+	tim.tm_hour = sTime.Hours;
+	tim.tm_min = sTime.Minutes;
+	tim.tm_sec = sTime.Seconds;
+	return mktime(&tim);
+}

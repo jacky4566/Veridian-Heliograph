@@ -8,6 +8,7 @@
 #include "main.h"
 #include "GNSSPVT.h"
 #include "UBXDATA.h"
+#include "myApp.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -15,9 +16,11 @@
 
 #define gnssFixOKmask 0x01
 #define timeFullyResolved 0x04
+#define longABSMask (0x7FFFFFFF)
+#define longSignMask (0x80000000)
 
 //State Machine
-GNSS_rate lastRate = GNSS_STOP;
+GNSS_rate lastRate;
 
 //Parsing stuff
 const uint8_t UBX_HEADER_[2] = { 0xB5, 0x62 };
@@ -26,11 +29,13 @@ const uint8_t UBX_PAYLOAD_OFFSET_ = 4;
 const uint8_t UBX_NAV_CLASS_ = 0x01;
 const uint8_t UBX_NAV_PVT = 0x07;
 const uint8_t UBX_PVT_LEN_ = 92;
+uint32_t packets;
 uint16_t parser_pos_ = 0;
 uint8_t msg_len_buffer_[2];
 uint16_t msg_len_;
 uint8_t checksum_buffer_[2];
-uint8_t rx_buffer_[96];
+uint8_t pvt_buffer_[96];
+uint8_t uart_buffer_[12];
 struct {
 	uint32_t itow;
 	uint16_t year;
@@ -66,10 +71,14 @@ struct {
 	int16_t magdec;
 	uint16_t magacc;
 } ubx_nav_pvt;
+struct locationFix LastFix;
 
-//Private Decs
+//Private functions
 void parse(uint8_t byte_read);
 uint16_t Checksum(uint8_t *data, uint16_t len);
+static void GNSS_Set_Power(GNSS_rate);
+static void LPUART_Transmit(uint8_t *pData, uint16_t Size, uint32_t Timeout);
+static void updateLocation();
 
 //Functions
 //Time
@@ -93,23 +102,26 @@ uint8_t GNSS_getSec() {
 }
 
 //Location
-double getLongitude_deg() {
-	return (double) ubx_nav_pvt.lon_deg / 10000000.0;
+void updateLocation() {
+	LastFix.Lat_Deg = (uint8_t) ((ubx_nav_pvt.lat_deg & longABSMask) / 10000000UL);
+	LastFix.Long_Deg = (uint8_t) ((ubx_nav_pvt.lon_deg & longABSMask) / 10000000UL);
+	LastFix.Lat_Dec = (uint16_t) (ubx_nav_pvt.lat_deg & longABSMask) - LastFix.Lat_Deg;
+	LastFix.Long_Dec = (uint16_t) (ubx_nav_pvt.lon_deg & longABSMask) - LastFix.Long_Deg;
+	LastFix.NS = ubx_nav_pvt.lat_deg & longSignMask;
+	LastFix.EW = ubx_nav_pvt.lon_deg & longSignMask;
+	LastFix.Elevation_M = (uint16_t) (abs(ubx_nav_pvt.hmsl) / 1000UL);
+	if (ubx_nav_pvt.hacc > 255) {
+		LastFix.HzAccM = 0xff;
+	} else {
+		LastFix.HzAccM = (uint8_t) (abs(ubx_nav_pvt.hacc) / 1000UL);
+	}
 }
-double getLatitude_deg() {
-	return (double) ubx_nav_pvt.lat_deg / 10000000.0;
+
+uint8_t getGroundSpeed_kph() {
+	return (uint8_t) (ubx_nav_pvt.gspeed * ((1000UL * 1000UL) / 3600UL));
 }
-double getMSLHeight_m() {
-	return (double) ubx_nav_pvt.hmsl / 1000.0;
-}
-double getHorizontalAccuracy_m() {
-	return (double) ubx_nav_pvt.hacc / 1000.0;
-}
-double getGroundSpeed_kph() {
-	return (double) ubx_nav_pvt.gspeed * ((1000.0 * 1000.0) / 3600.0);
-}
-double getMotionHeading_deg() {
-	return (double) ubx_nav_pvt.headmot / 10000.0;
+uint8_t getMotionHeading_deg() {
+	return (uint8_t) (ubx_nav_pvt.headmot / 10000UL);
 }
 
 //Status
@@ -126,130 +138,81 @@ bool isTimeFullyResolved() {
 	return ubx_nav_pvt.valid & timeFullyResolved;
 }
 
-//Admin Functions
-void startLPUART() {
-	HAL_GPIO_WritePin(GNSS_EX_PIN, GNSS_EX_PORT, GPIO_PIN_SET);
-	if (!LL_LPUART_IsEnabled(LPUART1)) {
-		LL_LPUART_InitTypeDef LPUART_InitStruct = { 0 };
-
-		LL_GPIO_InitTypeDef GPIO_InitStruct = { 0 };
-
-		/* Peripheral clock enable */
-		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_LPUART1);
-
-		LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOA);
-		/**LPUART1 GPIO Configuration
-		 PA2   ------> LPUART1_TX
-		 PA3   ------> LPUART1_RX
-		 */
-		GPIO_InitStruct.Pin = LL_GPIO_PIN_2;
-		GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
-		GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
-		GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-		GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-		GPIO_InitStruct.Alternate = LL_GPIO_AF_6;
-		LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-		GPIO_InitStruct.Pin = LL_GPIO_PIN_3;
-		GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
-		GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
-		GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-		GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-		GPIO_InitStruct.Alternate = LL_GPIO_AF_6;
-		LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-		NVIC_SetPriority(LPUART1_IRQn, 0);
-		NVIC_EnableIRQ(LPUART1_IRQn);
-
-		LPUART_InitStruct.BaudRate = 9600;
-		LPUART_InitStruct.DataWidth = LL_LPUART_DATAWIDTH_8B;
-		LPUART_InitStruct.StopBits = LL_LPUART_STOPBITS_1;
-		LPUART_InitStruct.Parity = LL_LPUART_PARITY_NONE;
-		LPUART_InitStruct.TransferDirection = LL_LPUART_DIRECTION_TX_RX;
-		LPUART_InitStruct.HardwareFlowControl = LL_LPUART_HWCONTROL_NONE;
-		LL_LPUART_Init(LPUART1, &LPUART_InitStruct);
-
-		/* Configure LPUART1 transfer interrupts : */
-		/* Clear WUF flag and enable the UART Wake Up from stop mode Interrupt */
-		LL_LPUART_ClearFlag_WKUP(LPUART1);
-		LL_LPUART_EnableIT_WKUP(LPUART1);
-
-		/* Enable Wake Up From Stop */
-		LL_LPUART_EnableInStopMode(LPUART1);
+void GNSS_Init() {
+//Turn off a bunch of stuff
+	LPUART_Transmit((uint8_t*) &UBX_NAV_GGA_OFF, sizeof(UBX_NAV_GGA_OFF), HAL_MAX_DELAY);
+	LPUART_Transmit((uint8_t*) &UBX_NAV_GLL_OFF, sizeof(UBX_NAV_GLL_OFF), HAL_MAX_DELAY);
+	LPUART_Transmit((uint8_t*) &UBX_NAV_GSA_OFF, sizeof(UBX_NAV_GSA_OFF), HAL_MAX_DELAY);
+	LPUART_Transmit((uint8_t*) &UBX_NAV_GSV_OFF, sizeof(UBX_NAV_GSV_OFF), HAL_MAX_DELAY);
+	LPUART_Transmit((uint8_t*) &UBX_NAV_GSV_OFF, sizeof(UBX_NAV_GSV_OFF), HAL_MAX_DELAY);
+	LPUART_Transmit((uint8_t*) &UBX_NAV_RMC_OFF, sizeof(UBX_NAV_RMC_OFF), HAL_MAX_DELAY);
+	LPUART_Transmit((uint8_t*) &UBX_NAV_VTG_OFF, sizeof(UBX_NAV_VTG_OFF), HAL_MAX_DELAY);
+//Enable PVT message
+	LPUART_Transmit((uint8_t*) &UBX_NAV_PVT_ON, sizeof(UBX_NAV_PVT_ON), HAL_MAX_DELAY);
+//Enable PSM
+	LPUART_Transmit((uint8_t*) &UBX_CFG_RXM_1, sizeof(UBX_CFG_RXM_1), HAL_MAX_DELAY);
+//Save
+	LPUART_Transmit((uint8_t*) &UBX_CFG_CFG, sizeof(UBX_CFG_CFG), HAL_MAX_DELAY);
+//Move from uninitlized to software standby
+	GNSS_Set_Power(GNSS_STOP);
+	while (LL_LPUART_IsActiveFlag_RXNE(LPUART1)) { //empty LPUART buffer
+		LL_LPUART_ReceiveData8(LPUART1);
 	}
 }
 
-void stopLPUART() {
-	LL_LPUART_DeInit(LPUART1);
-	HAL_GPIO_WritePin(GNSS_EX_PIN, GNSS_EX_PORT, GPIO_PIN_RESET);
-}
-
-void LPUARTPrinter(const uint8_t *buf, uint32_t len) {
-	/* Send characters one per one, until last char to be sent */
-	for (; len >= 0; len--) {
-		while (!LL_LPUART_IsActiveFlag_TXE(LPUART1)) { // Wait for TX reg to be empty
+void GNSS_Power() {
+	switch (lastRate) {
+	case GNSS_STOP:
+		if (superCapmV > 3100) {
+			GNSS_Set_Power(GNSS_SLOW);
 		}
-		LL_LPUART_TransmitData8(LPUART1, *buf++); //put char into transmit FIFO
-	}
-	while (!LL_LPUART_IsActiveFlag_TC(LPUART1)) { //wait for TX Complete Flush
+		break;
+	case GNSS_Hot_Hold:
+		if (superCapmV < 2700) {
+			GNSS_Set_Power(GNSS_STOP);
+		} else if (superCapmV > 3100) {
+			GNSS_Set_Power(GNSS_SLOW);
+		}
+		break;
+	case GNSS_SLOW:
+		if (superCapmV < 3000) {
+			GNSS_Set_Power(GNSS_Hot_Hold);
+		} else if (superCapmV > 3300) {
+			GNSS_Set_Power(GNSS_FAST);
+		}
+		break;
+	case GNSS_FAST:
+		if (superCapmV < 3200) {
+			GNSS_Set_Power(GNSS_SLOW);
+		}
+		break;
 	}
 }
 
-void GNSS_Setup(GNSS_rate newRate) {
+static void GNSS_Set_Power(GNSS_rate newRate) {
+	LPUART_CharReception_Callback();
 	if (newRate == lastRate) {
-		//No Change needed
 		return;
 	}
 	switch (newRate) {
 	case GNSS_STOP:
-		if (lastRate == GNSS_FULL) { //Full speed has no power control
-			GNSS_Setup(GNSS_SLOW);
-		}
-		stopLPUART();
+		lastRate = GNSS_STOP;
+		LPUART_Transmit((uint8_t*) &UBX_CFG_PWR_STNBY, sizeof(UBX_CFG_PWR_STNBY), HAL_MAX_DELAY); //Stop GPS
+		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_RESET); //Disable GNSS
+		break;
+	case GNSS_Hot_Hold:
+		lastRate = GNSS_Hot_Hold;
+		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_RESET); //Disable GNSS
 		break;
 	case GNSS_SLOW:
-		startLPUART();
-		//Send slow commands
-		LPUARTPrinter(UBX_NAV_GGA_OFF, sizeof(UBX_NAV_GGA_OFF));
-		LPUARTPrinter(UBX_NAV_GLL_OFF, sizeof(UBX_NAV_GLL_OFF));
-		LPUARTPrinter(UBX_NAV_GSA_OFF, sizeof(UBX_NAV_GSA_OFF));
-		LPUARTPrinter(UBX_NAV_GSV_OFF, sizeof(UBX_NAV_GSV_OFF));
-		LPUARTPrinter(UBX_NAV_RMC_OFF, sizeof(UBX_NAV_RMC_OFF));
-		LPUARTPrinter(UBX_NAV_VTG_OFF, sizeof(UBX_NAV_VTG_OFF));
-		LPUARTPrinter(UBX_NAV_PVT_ON, sizeof(UBX_NAV_PVT_ON));
-		LPUARTPrinter(UBX_CFG_PM2_4S, sizeof(UBX_CFG_PM2_4S));
-		LPUARTPrinter(UBX_CFG_RXM_0, sizeof(UBX_CFG_RXM_0));
-		LPUARTPrinter(UBX_CFG_CFG, sizeof(UBX_CFG_CFG));
+		lastRate = GNSS_SLOW;
+		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_SET); //Enable GNSS
+		LPUART_Transmit((uint8_t*) &UBX_CFG_PM2_600S, sizeof(UBX_CFG_PM2_600S), HAL_MAX_DELAY);
 		break;
 	case GNSS_FAST:
-		startLPUART();
-		//Send fast commands
-		LPUARTPrinter(UBX_NAV_GGA_OFF, sizeof(UBX_NAV_GGA_OFF));
-		LPUARTPrinter(UBX_NAV_GLL_OFF, sizeof(UBX_NAV_GLL_OFF));
-		LPUARTPrinter(UBX_NAV_GSA_OFF, sizeof(UBX_NAV_GSA_OFF));
-		LPUARTPrinter(UBX_NAV_GSV_OFF, sizeof(UBX_NAV_GSV_OFF));
-		LPUARTPrinter(UBX_NAV_RMC_OFF, sizeof(UBX_NAV_RMC_OFF));
-		LPUARTPrinter(UBX_NAV_VTG_OFF, sizeof(UBX_NAV_VTG_OFF));
-		LPUARTPrinter(UBX_NAV_PVT_ON, sizeof(UBX_NAV_PVT_ON));
-		LPUARTPrinter(UBX_CFG_PM2_600S, sizeof(UBX_CFG_PM2_600S));
-		LPUARTPrinter(UBX_CFG_RXM_0, sizeof(UBX_CFG_RXM_0));
-		LPUARTPrinter(UBX_CFG_CFG, sizeof(UBX_CFG_CFG));
-		break;
-	case GNSS_FULL:
-		startLPUART();
-		//Send full power commands
-		LPUARTPrinter(UBX_NAV_GGA_OFF, sizeof(UBX_NAV_GGA_OFF));
-		LPUARTPrinter(UBX_NAV_GLL_OFF, sizeof(UBX_NAV_GLL_OFF));
-		LPUARTPrinter(UBX_NAV_GSA_OFF, sizeof(UBX_NAV_GSA_OFF));
-		LPUARTPrinter(UBX_NAV_GSV_OFF, sizeof(UBX_NAV_GSV_OFF));
-		LPUARTPrinter(UBX_NAV_RMC_OFF, sizeof(UBX_NAV_RMC_OFF));
-		LPUARTPrinter(UBX_NAV_VTG_OFF, sizeof(UBX_NAV_VTG_OFF));
-		LPUARTPrinter(UBX_NAV_PVT_ON, sizeof(UBX_NAV_PVT_ON));
-		LPUARTPrinter(UBX_CFG_RXM_0, sizeof(UBX_CFG_RXM_0));
-		LPUARTPrinter(UBX_CFG_PMS_FULL, sizeof(UBX_CFG_PMS_FULL));
-		LPUARTPrinter(UBX_CFG_CFG, sizeof(UBX_CFG_CFG));
-		break;
-	default:
+		lastRate = GNSS_FAST;
+		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_SET); //Enable GNSS
+		LPUART_Transmit((uint8_t*) &UBX_CFG_PM2_4S, sizeof(UBX_CFG_PM2_4S), HAL_MAX_DELAY);
 		break;
 	}
 }
@@ -278,7 +241,7 @@ void parse(uint8_t byte_read) {
 		/* Message class */
 	} else if (parser_pos_ == 2) {
 		if (byte_read == UBX_NAV_CLASS_) {
-			rx_buffer_[parser_pos_ - sizeof(UBX_HEADER_)] = byte_read;
+			pvt_buffer_[parser_pos_ - sizeof(UBX_HEADER_)] = byte_read;
 			parser_pos_++;
 		} else {
 			parser_pos_ = 0;
@@ -286,7 +249,7 @@ void parse(uint8_t byte_read) {
 		/* Message ID */
 	} else if (parser_pos_ == 3) {
 		if (byte_read == UBX_NAV_PVT) {
-			rx_buffer_[parser_pos_ - sizeof(UBX_HEADER_)] = byte_read;
+			pvt_buffer_[parser_pos_ - sizeof(UBX_HEADER_)] = byte_read;
 			parser_pos_++;
 		} else {
 			parser_pos_ = 0;
@@ -294,13 +257,13 @@ void parse(uint8_t byte_read) {
 		/* Messgae length */
 	} else if (parser_pos_ == 4) {
 		msg_len_buffer_[0] = byte_read;
-		rx_buffer_[parser_pos_ - sizeof(UBX_HEADER_)] = byte_read;
+		pvt_buffer_[parser_pos_ - sizeof(UBX_HEADER_)] = byte_read;
 		parser_pos_++;
 		/* Message length */
 	} else if (parser_pos_ == 5) {
 		msg_len_buffer_[1] = byte_read;
 		msg_len_ = ((uint16_t) msg_len_buffer_[1]) << 8 | msg_len_buffer_[0];
-		rx_buffer_[parser_pos_ - sizeof(UBX_HEADER_)] = byte_read;
+		pvt_buffer_[parser_pos_ - sizeof(UBX_HEADER_)] = byte_read;
 		if (msg_len_ == UBX_PVT_LEN_) {
 			parser_pos_++;
 		} else {
@@ -309,7 +272,7 @@ void parse(uint8_t byte_read) {
 		return;
 		/* Message payload */
 	} else if (parser_pos_ < (msg_len_ + UBX_HEADER_LEN_)) {
-		rx_buffer_[parser_pos_ - sizeof(UBX_HEADER_)] = byte_read;
+		pvt_buffer_[parser_pos_ - sizeof(UBX_HEADER_)] = byte_read;
 		parser_pos_++;
 		/* Checksum */
 	} else if (parser_pos_ == (msg_len_ + UBX_HEADER_LEN_)) {
@@ -317,15 +280,12 @@ void parse(uint8_t byte_read) {
 		parser_pos_++;
 	} else {
 		checksum_buffer_[1] = byte_read;
-		uint16_t received_checksum = ((uint16_t) checksum_buffer_[1]) << 8
-				| checksum_buffer_[0];
-		uint16_t computed_checksum = Checksum(rx_buffer_,
-				msg_len_ + UBX_HEADER_LEN_);
+		uint16_t received_checksum = ((uint16_t) checksum_buffer_[1]) << 8 | checksum_buffer_[0];
+		uint16_t computed_checksum = Checksum(pvt_buffer_, msg_len_ + UBX_HEADER_LEN_);
 		if (computed_checksum == received_checksum) {
-			if (rx_buffer_[UBX_PAYLOAD_OFFSET_ + 21] & 0x01) { //Fix OK
-				memcpy(&ubx_nav_pvt, rx_buffer_ + UBX_PAYLOAD_OFFSET_,
-						UBX_PVT_LEN_);
-			}
+			memcpy(&ubx_nav_pvt, pvt_buffer_ + UBX_PAYLOAD_OFFSET_, UBX_PVT_LEN_);
+			updateLocation();
+			packets++;
 			parser_pos_ = 0;
 		} else {
 			parser_pos_ = 0;
@@ -334,6 +294,27 @@ void parse(uint8_t byte_read) {
 }
 
 void LPUART_CharReception_Callback(void) {
-	uint8_t newData = (uint8_t) LL_LPUART_ReceiveData8(LPUART1);
-	parse(newData);
+	while (LL_LPUART_IsActiveFlag_RXNE(LPUART1)) {
+		parse(LL_LPUART_ReceiveData8(LPUART1));
+	}
 }
+
+static void LPUART_Transmit(uint8_t *pData, uint16_t Size, uint32_t Timeout) {
+	if ((pData == NULL) || (Size == 0U)) {
+		return;
+	}
+
+	while (Size--) {
+		/* Wait for TXE flag to be raised */
+		while (!LL_LPUART_IsActiveFlag_TXE(LPUART1)) {
+		}
+		uint8_t sendThis = (uint8_t) (*pData);
+		LL_LPUART_TransmitData8(LPUART1, sendThis);
+		pData++;
+	}
+
+	/* Wait for TC flag to be raised for last char */
+	while (!LL_LPUART_IsActiveFlag_TC(LPUART1)) {
+	}
+}
+

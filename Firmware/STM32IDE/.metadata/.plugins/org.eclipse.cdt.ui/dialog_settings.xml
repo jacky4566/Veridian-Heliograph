@@ -6,4 +6,15 @@
 	</section>
 	<section name="CResourceRenameRefactoringInputPage">
 	</section>
+	<section name="OptionalMessageDialog.hide.">
+		<item key="askReindex.detail" value="0"/>
+		<item key="askReindex" value="true"/>
+	</section>
+	<section name="PDOMSearchPage">
+		<item key="caseSensitive" value="false"/>
+		<item key="searchFlags" value="227191"/>
+		<list key="previousPatterns">
+			<item value="lcd_state"/>
+		</list>
+	</section>
 </section>
