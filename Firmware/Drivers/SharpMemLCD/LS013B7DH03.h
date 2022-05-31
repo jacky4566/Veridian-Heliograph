@@ -19,19 +19,25 @@
 #define LCD_RES_PX_X_b ((LCD_RES_PX_X / 8) + 2)
 #define LCD_RES_PX_Y (128)
 
+#define LCD_RATE_FAST_mV (3000)
+#define LCD_RATE_FAST (1)
+#define LCD_RATE_SLOW (15)
+
 typedef enum  {
-	LCD_OFF, 		//Disabled
-	LCD_READY, 		//No more data to send
-	LCD_SENDING 	//SPI, DMA actively working
+	LCD_OFF, 			//Disabled
+	LCD_TIMER, 			//Standby, waiting for next timer
+	LCD_READY, 			//No more data to send
+	LCD_SENDING_DATA,	//Sending Pixel Data
+	LCD_SENDING_CLR		//Sending Clear Command
 }lcd_State_enum;
 
 extern char strbuffer[];
-extern uint16_t timer;
+extern uint8_t LCDnextUpdatePeriod;
 
 //Functions
-void lcd_init(void);		//Start LCD
-void lcd_clear(void); 		//Clear Display
-void LCD_Power(); 			//Controls power state
+void lcd_init(void);			//Start LCD
+void lcd_clear(void); 			//Clear Display
+lcd_State_enum LCD_Power(); 	//Controls power state
 lcd_State_enum lcd_draw(void); 	//Draws lines, Call until return done
 
 void lcd_drawPixel(uint8_t x, uint8_t y, uint8_t bDraw);

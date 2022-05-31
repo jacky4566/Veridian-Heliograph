@@ -1,39 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
-		<item key="selection" value="updateLocation"/>
+		<item key="selection" value=" "/>
 		<item key="wrap" value="true"/>
 		<item key="casesensitive" value="false"/>
 		<item key="wholeword" value="false"/>
 		<item key="incremental" value="false"/>
 		<item key="isRegEx" value="false"/>
 		<list key="findhistory">
-			<item value="updateLocation"/>
-			<item value="LastFix"/>
-			<item value="lastRate"/>
-			<item value="getHorizontalAccuracy_m"/>
-			<item value="double"/>
-			<item value="RXBytes"/>
-			<item value="LL_LPUART_Enable"/>
-			<item value="LPUART_Transmit"/>
-			<item value="&amp;hlpuart1, "/>
-			<item value="HAL_UART_Transmit"/>
-			<item value="NVIC_EnableIRQ"/>
-			<item value="rx_buffer_"/>
 			<item value=" "/>
-			<item value="GNSS_Set_Power"/>
-			<item value="GNSS_Init"/>
+			<item value="isTimeFullyResolved"/>
+			<item value="lcd_drawLine"/>
+			<item value="LL_RCC_SetLPUARTClockSource"/>
+			<item value="overrun"/>
+			<item value="lcd_State_enum"/>
+			<item value="lastRate"/>
+			<item value="lastDraw"/>
+			<item value="LCD_OFF"/>
+			<item value=""/>
+			<item value="LCD_Power"/>
+			<item value="LCDnextUpdatePeriod"/>
+			<item value="guiTimer"/>
+			<item value="TIM2"/>
+			<item value="updateLocation"/>
 		</list>
 		<list key="replacehistory">
+			<item value=", 0x"/>
 			<item value=""/>
 			<item value="LPUART_Transmit"/>
 			<item value="pvt_buffer_"/>
-			<item value=", 0x"/>
 		</list>
 	</section>
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
 		<item key="DIALOG_X_ORIGIN" value="961"/>
-		<item key="DIALOG_Y_ORIGIN" value="1099"/>
+		<item key="DIALOG_Y_ORIGIN" value="657"/>
 		<item key="DIALOG_WIDTH" value="322"/>
 		<item key="DIALOG_HEIGHT" value="391"/>
 		<item key="DIALOG_FONT_NAME" value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI"/>

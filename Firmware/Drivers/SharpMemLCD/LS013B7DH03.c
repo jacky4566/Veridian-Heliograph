@@ -14,6 +14,9 @@
 #include "ls013b7dh03.h"
 #include "gfxfont.h"
 
+#define LCDFast (1)
+#define LCDSlow (15)
+
 //Handles
 extern SPI_HandleTypeDef hspi1;
 extern LPTIM_HandleTypeDef hlptim1; //Get the handle from main
@@ -33,10 +36,10 @@ static uint8_t rotation;
 static uint8_t cursor_y;
 static uint8_t cursor_x;
 static GFXfont *gfxFontPtr;
-uint16_t timer;
 
 //State Machine
 volatile lcd_State_enum lcd_state = LCD_OFF;
+uint32_t lastDraw = 0;
 
 //Internal Function declarations
 static void lcd_DoTX();
@@ -49,21 +52,31 @@ void lcd_init() {
 	lcd_clear();
 }
 
-void LCD_Power() {
+lcd_State_enum LCD_Power() {
 	if (!vBATOK()) {
 		//Vbat not ok
-		if (lcd_state == LCD_SENDING){
+		if (lcd_state == LCD_SENDING_DATA || lcd_state == LCD_SENDING_CLR) {
 			HAL_SPI_DMAStop(&hspi1);
 		}
 		lcd_state = LCD_OFF;
 		HAL_LPTIM_PWM_Stop(&hlptim1);
-		HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_RESET); //enable display
+		HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_RESET); //Disable display
+		return lcd_state; //no need to proceed further
 	} else if (vBATOK() && (lcd_state == LCD_OFF)) {
 		//Turn on LCD
 		lcd_state = LCD_READY;
 		HAL_LPTIM_PWM_Start(&hlptim1, 2047, 1023); //32768 DIV16 DIV2048 1HZ
-		HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_SET); //enable display
+		HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_SET); //Enable display
 	}
+
+	if (lcd_state == LCD_TIMER) {
+		if ((superCapmV > LCD_RATE_FAST_mV) && ((lastDraw + LCDFast) <= getUnix())) {
+			lcd_state = LCD_READY;
+		} else if ((lastDraw + LCDSlow) <= getUnix()) {
+			lcd_state = LCD_READY;
+		}
+	}
+	return lcd_state;
 }
 
 void lcd_SetCursor(uint8_t x, uint8_t y) {
@@ -109,7 +122,7 @@ void lcd_print(int n) {
 	}
 }
 
-void lcd_print_char(uint8_t theChar){
+void lcd_print_char(uint8_t theChar) {
 	cursor_x += lcd_writeChar(cursor_x, cursor_y, theChar);
 }
 
@@ -151,12 +164,12 @@ void lcd_togglePixel(uint8_t x, uint8_t y) {
 void lcd_drawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t color) {
 	if (x0 == x1) {
 		//Vertical Line
-		for (uint8_t i = y0; i <= y1; i++) {
+		for (uint8_t i = y0; i < y1; i++) {
 			lcd_drawPixel(x0, i, color);
 		}
 	} else if (y0 == y1) {
 		//Horizontal line
-		for (uint8_t i = x0; i <= x1; i++) {
+		for (uint8_t i = x0; i < x1; i++) {
 			lcd_drawPixel(i, y0, color);
 		}
 	} else {
@@ -185,17 +198,17 @@ void lcd_setRotation(uint8_t newRot) {
 
 void lcd_clear(void) {
 	uint8_t clearBuffer[] = { MLCD_CM, MLCD_TR };
+	lcd_state = LCD_SENDING_CLR;
 	HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_SET);
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) &clearBuffer, sizeof(clearBuffer), HAL_MAX_DELAY);
-	HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_RESET);
+	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) &clearBuffer, sizeof(clearBuffer));
 
-//Clear buffer
+	//Clear buffer
 	for (uint8_t y = 0; y < LCD_RES_PX_Y; y++) {
 		for (uint8_t x = 0; x < LCD_RES_PX_X_b; x++) {
 			if (x == 0) {
 				LCD_BUFFER[y][x] = y + 1; //assign line number
 			} else if (x == (LCD_RES_PX_X_b - 1)) {
-				LCD_BUFFER[y][x] = 0x00; //trailer
+				LCD_BUFFER[y][x] = 0x00; //trailer with transmit flag
 			} else {
 				LCD_BUFFER[y][x] = 0xff; //white data
 			}
@@ -206,9 +219,10 @@ void lcd_clear(void) {
 lcd_State_enum lcd_draw(void) {
 	if (lcd_state == LCD_READY && lcd_hasData()) {
 		//start new transfer
-		lcd_state = LCD_SENDING;
+		lcd_state = LCD_SENDING_DATA;
 		HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_SET);
 		HAL_SPI_Transmit(&hspi1, (uint8_t*) &MLCD_WR, sizeof(MLCD_WR), HAL_MAX_DELAY);
+		lastDraw = getUnix();
 		lcd_DoTX();
 	}
 	return lcd_state;
@@ -243,10 +257,15 @@ static void lcd_DoTX() {
 		//Done
 		HAL_SPI_Transmit(&hspi1, (uint8_t*) &MLCD_TR, sizeof(MLCD_TR), HAL_MAX_DELAY); //send Trailer command
 		HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_RESET);
-		lcd_state = LCD_READY;
+		lcd_state = LCD_TIMER; //Enter timer mode for power() to clear
 	}
 }
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
-	lcd_DoTX();
+	if (lcd_state == LCD_SENDING_DATA) {
+		lcd_DoTX();
+	} else if (lcd_state == LCD_SENDING_CLR) {
+		HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_RESET);
+		lcd_state = LCD_READY;
+	}
 }

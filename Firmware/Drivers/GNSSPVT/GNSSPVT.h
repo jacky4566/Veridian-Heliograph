@@ -13,13 +13,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef enum  {
-	NO_FIX = 0,
-	DEAD_RECKONING,
-	FIX_2D,
-	FIX_3D,
-	GNSS_AND_DEAD_RECKONING,
-	TIME_ONLY
+typedef enum {
+	NO_FIX = 0, DEAD_RECKONING, FIX_2D, FIX_3D, GNSS_AND_DEAD_RECKONING, TIME_ONLY
 } GNSS_FixType;
 
 struct locationFix {
@@ -34,16 +29,17 @@ struct locationFix {
 };
 
 typedef enum {
-	GNSS_STOP, GNSS_Hot_Hold, GNSS_SLOW, GNSS_FAST
+	GNSS_DEFAULT, GNSS_STOP, GNSS_Hot_Hold, GNSS_SLOW, GNSS_FAST
 } GNSS_rate;
 
 extern uint32_t packets;
-extern GNSS_rate lastRate;
+extern GNSS_rate GNSSlastRate;
 extern struct locationFix LastFix;
 
 //Public Functions
 void GNSS_Init();
 void GNSS_Power();
+void GNSS_Prep_Stop();
 
 //Time
 uint16_t GNSS_getYear();

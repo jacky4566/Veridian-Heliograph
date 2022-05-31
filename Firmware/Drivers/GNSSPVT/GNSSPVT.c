@@ -19,8 +19,8 @@
 #define longABSMask (0x7FFFFFFF)
 #define longSignMask (0x80000000)
 
-//State Machine
-GNSS_rate lastRate;
+//Power State
+GNSS_rate GNSSlastRate;
 
 //Parsing stuff
 const uint8_t UBX_HEADER_[2] = { 0xB5, 0x62 };
@@ -115,6 +115,9 @@ void updateLocation() {
 	} else {
 		LastFix.HzAccM = (uint8_t) (abs(ubx_nav_pvt.hacc) / 1000UL);
 	}
+	if (isTimeFullyResolved()) {
+		setTime();
+	}
 }
 
 uint8_t getGroundSpeed_kph() {
@@ -139,6 +142,10 @@ bool isTimeFullyResolved() {
 }
 
 void GNSS_Init() {
+	//Enable Interrupts and STOP0
+	LL_LPUART_Enable(LPUART1);
+	HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_RESET); //DISABLE GNSS
+	LPUART_Transmit((uint8_t*) 0xff, 1, HAL_MAX_DELAY); //wakeup
 //Turn off a bunch of stuff
 	LPUART_Transmit((uint8_t*) &UBX_NAV_GGA_OFF, sizeof(UBX_NAV_GGA_OFF), HAL_MAX_DELAY);
 	LPUART_Transmit((uint8_t*) &UBX_NAV_GLL_OFF, sizeof(UBX_NAV_GLL_OFF), HAL_MAX_DELAY);
@@ -153,36 +160,52 @@ void GNSS_Init() {
 	LPUART_Transmit((uint8_t*) &UBX_CFG_RXM_1, sizeof(UBX_CFG_RXM_1), HAL_MAX_DELAY);
 //Save
 	LPUART_Transmit((uint8_t*) &UBX_CFG_CFG, sizeof(UBX_CFG_CFG), HAL_MAX_DELAY);
-//Move from uninitlized to software standby
-	GNSS_Set_Power(GNSS_STOP);
-	while (LL_LPUART_IsActiveFlag_RXNE(LPUART1)) { //empty LPUART buffer
-		LL_LPUART_ReceiveData8(LPUART1);
+//Move from uninitlized
+	GNSS_Power();
+}
+
+void GNSS_Prep_Stop() {
+	while (LL_LPUART_IsActiveFlag_RXNE(LPUART1)) { //Empty RX buffer
+		parse(LL_LPUART_ReceiveData8(LPUART1));
 	}
+	LL_LPUART_ClearFlag_ORE(LPUART1);
+	/* Make sure that no LPUART transfer is on-going */
+	while (LL_LPUART_IsActiveFlag_BUSY(LPUART1) == 1) {
+	}
+	/* Make sure that LPUART is ready to receive */
+	while (LL_LPUART_IsActiveFlag_REACK(LPUART1) == 0) {
+	}
+	LL_LPUART_ClearFlag_WKUP(LPUART1);
+	LL_LPUART_EnableIT_WKUP(LPUART1);
+	LL_LPUART_EnableInStopMode(LPUART1);
 }
 
 void GNSS_Power() {
-	switch (lastRate) {
+	switch (GNSSlastRate) {
+	case GNSS_DEFAULT:
+		GNSS_Set_Power(GNSS_SLOW);
+		break;
 	case GNSS_STOP:
-		if (superCapmV > 3100) {
+		if (superCapmV > 3000) {
 			GNSS_Set_Power(GNSS_SLOW);
 		}
 		break;
 	case GNSS_Hot_Hold:
-		if (superCapmV < 2700) {
+		if (superCapmV < 2500) {
 			GNSS_Set_Power(GNSS_STOP);
-		} else if (superCapmV > 3100) {
+		} else if (superCapmV > 3000) {
 			GNSS_Set_Power(GNSS_SLOW);
 		}
 		break;
 	case GNSS_SLOW:
-		if (superCapmV < 3000) {
+		if (superCapmV < 2800) {
 			GNSS_Set_Power(GNSS_Hot_Hold);
-		} else if (superCapmV > 3300) {
+		} else if (superCapmV > 3400) {
 			GNSS_Set_Power(GNSS_FAST);
 		}
 		break;
 	case GNSS_FAST:
-		if (superCapmV < 3200) {
+		if (superCapmV < 3300) {
 			GNSS_Set_Power(GNSS_SLOW);
 		}
 		break;
@@ -191,28 +214,37 @@ void GNSS_Power() {
 
 static void GNSS_Set_Power(GNSS_rate newRate) {
 	LPUART_CharReception_Callback();
-	if (newRate == lastRate) {
+	if (newRate == GNSSlastRate) {
 		return;
 	}
 	switch (newRate) {
 	case GNSS_STOP:
-		lastRate = GNSS_STOP;
+		LPUART_Transmit((uint8_t*) 0xff, 1, HAL_MAX_DELAY); //wakeup
 		LPUART_Transmit((uint8_t*) &UBX_CFG_PWR_STNBY, sizeof(UBX_CFG_PWR_STNBY), HAL_MAX_DELAY); //Stop GPS
+		HAL_Delay(1);
 		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_RESET); //Disable GNSS
+		GNSSlastRate = GNSS_STOP;
 		break;
 	case GNSS_Hot_Hold:
-		lastRate = GNSS_Hot_Hold;
 		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_RESET); //Disable GNSS
+		GNSSlastRate = GNSS_Hot_Hold;
 		break;
+	case GNSS_DEFAULT:
 	case GNSS_SLOW:
-		lastRate = GNSS_SLOW;
 		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_SET); //Enable GNSS
-		LPUART_Transmit((uint8_t*) &UBX_CFG_PM2_600S, sizeof(UBX_CFG_PM2_600S), HAL_MAX_DELAY);
+		if (GNSSlastRate == GNSS_DEFAULT || GNSSlastRate == GNSS_STOP) {
+			LPUART_Transmit((uint8_t*) 0xff, 1, HAL_MAX_DELAY); //wakeup
+			HAL_Delay(400);
+		}
+		LPUART_Transmit((uint8_t*) &UBX_CFG_PMS_1HZ, sizeof(UBX_CFG_PMS_1HZ), HAL_MAX_DELAY);
+		LPUART_Transmit((uint8_t*) &UBX_CFG_CFG, sizeof(UBX_CFG_CFG), HAL_MAX_DELAY);
+		GNSSlastRate = GNSS_SLOW;
 		break;
 	case GNSS_FAST:
-		lastRate = GNSS_FAST;
 		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_SET); //Enable GNSS
-		LPUART_Transmit((uint8_t*) &UBX_CFG_PM2_4S, sizeof(UBX_CFG_PM2_4S), HAL_MAX_DELAY);
+		LPUART_Transmit((uint8_t*) &UBX_CFG_PMS_1HZ, sizeof(UBX_CFG_PMS_1HZ), HAL_MAX_DELAY);
+		LPUART_Transmit((uint8_t*) &UBX_CFG_CFG, sizeof(UBX_CFG_CFG), HAL_MAX_DELAY);
+		GNSSlastRate = GNSS_FAST;
 		break;
 	}
 }
