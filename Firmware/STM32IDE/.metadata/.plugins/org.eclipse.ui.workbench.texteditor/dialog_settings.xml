@@ -1,28 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
-		<item key="selection" value=" "/>
+		<item key="selection" value="sTime"/>
 		<item key="wrap" value="true"/>
 		<item key="casesensitive" value="false"/>
-		<item key="wholeword" value="false"/>
+		<item key="wholeword" value="true"/>
 		<item key="incremental" value="false"/>
 		<item key="isRegEx" value="false"/>
 		<list key="findhistory">
-			<item value=" "/>
-			<item value="isTimeFullyResolved"/>
-			<item value="lcd_drawLine"/>
-			<item value="LL_RCC_SetLPUARTClockSource"/>
-			<item value="overrun"/>
-			<item value="lcd_State_enum"/>
-			<item value="lastRate"/>
+			<item value="sTime"/>
+			<item value="tempC"/>
+			<item value="Long_Deg"/>
+			<item value="cursor_x"/>
+			<item value="strbuffer"/>
 			<item value="lastDraw"/>
-			<item value="LCD_OFF"/>
-			<item value=""/>
+			<item value="getUnix"/>
 			<item value="LCD_Power"/>
-			<item value="LCDnextUpdatePeriod"/>
-			<item value="guiTimer"/>
-			<item value="TIM2"/>
-			<item value="updateLocation"/>
+			<item value="lcd_SetCursor"/>
+			<item value="lastWakeUpSource"/>
+			<item value="TE"/>
+			<item value="TX"/>
+			<item value="LPUART_Transmit"/>
+			<item value=" "/>
+			<item value="(superCapmV - 2200) / 14)"/>
 		</list>
 		<list key="replacehistory">
 			<item value=", 0x"/>

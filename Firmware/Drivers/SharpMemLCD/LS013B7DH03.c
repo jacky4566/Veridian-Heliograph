@@ -20,7 +20,6 @@
 //Handles
 extern SPI_HandleTypeDef hspi1;
 extern LPTIM_HandleTypeDef hlptim1; //Get the handle from main
-extern TIM_HandleTypeDef htim2;
 
 //Commands
 static const uint8_t MLCD_WR = 0x01; //MLCD write line command
@@ -33,13 +32,12 @@ char strbuffer[20];
 
 //Variables
 static uint8_t rotation;
-static uint8_t cursor_y;
-static uint8_t cursor_x;
+static uint16_t cursor_y;
+static uint16_t cursor_x;
 static GFXfont *gfxFontPtr;
 
 //State Machine
 volatile lcd_State_enum lcd_state = LCD_OFF;
-uint32_t lastDraw = 0;
 
 //Internal Function declarations
 static void lcd_DoTX();
@@ -70,9 +68,9 @@ lcd_State_enum LCD_Power() {
 	}
 
 	if (lcd_state == LCD_TIMER) {
-		if ((superCapmV > LCD_RATE_FAST_mV) && ((lastDraw + LCDFast) <= getUnix())) {
+		if ((superCapmV > LCD_RATE_FAST_mV) && (guiTimer >= LCDFast)) {
 			lcd_state = LCD_READY;
-		} else if ((lastDraw + LCDSlow) <= getUnix()) {
+		} else if (guiTimer >= LCDSlow) {
 			lcd_state = LCD_READY;
 		}
 	}
@@ -116,7 +114,7 @@ uint8_t lcd_writeChar(uint8_t x, uint8_t y, uint8_t c) {
 }
 
 void lcd_print(int n) {
-	int bufPointer = 0;
+	uint8_t bufPointer = 0;
 	while (bufPointer < n) {
 		cursor_x += lcd_writeChar(cursor_x, cursor_y, strbuffer[bufPointer++]);
 	}
@@ -126,37 +124,16 @@ void lcd_print_char(uint8_t theChar) {
 	cursor_x += lcd_writeChar(cursor_x, cursor_y, theChar);
 }
 
-void lcd_drawPixel(uint8_t x, uint8_t y, uint8_t bDraw) {
-	if (x >= LCD_RES_PX_X || y >= LCD_RES_PX_Y)
+void lcd_drawPixel(int16_t x, int16_t y, uint8_t bDraw) {
+	if (x < 0 || y < 0 || x >= LCD_RES_PX_X || y >= LCD_RES_PX_Y)
 		return;
 
 	uint8_t xx = (x / 8) + 1; //X byte in array
 	uint8_t XbitInByte = (0x01 << (x % 8));
 //check if pixel needs updating
 	if (bDraw == LCD_WHITE) { //Set bit
-		if ((LCD_BUFFER[y][xx] & XbitInByte) == 0x00) { //bit not set
-			LCD_BUFFER[y][LCD_RES_PX_X_b - 1] = 0x00; 	//transmit this line
-			LCD_BUFFER[y][xx] |= XbitInByte; 	//set bit
-		}
-	} else {
-		if (LCD_BUFFER[y][xx] & XbitInByte) { //bit is set
-			LCD_BUFFER[y][LCD_RES_PX_X_b - 1] = 0x00; 	//transmit this line
-			LCD_BUFFER[y][xx] &= ~XbitInByte; //clear bit
-		}
-	}
-}
-
-void lcd_togglePixel(uint8_t x, uint8_t y) {
-	if (x >= LCD_RES_PX_X || y >= LCD_RES_PX_Y)
-		return;
-
-	uint8_t xx = (x / 8) + 1; //X byte in array
-	uint8_t XbitInByte = (0x01 << (x % 8));
-	if ((LCD_BUFFER[y][xx] & XbitInByte) == 0x00) { //bit not set
-		LCD_BUFFER[y][LCD_RES_PX_X_b - 1] = 0x00; 	//transmit this line
 		LCD_BUFFER[y][xx] |= XbitInByte; 	//set bit
 	} else {
-		LCD_BUFFER[y][LCD_RES_PX_X_b - 1] = 0x00; 	//transmit this line
 		LCD_BUFFER[y][xx] &= ~XbitInByte; //clear bit
 	}
 }
@@ -164,12 +141,12 @@ void lcd_togglePixel(uint8_t x, uint8_t y) {
 void lcd_drawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t color) {
 	if (x0 == x1) {
 		//Vertical Line
-		for (uint8_t i = y0; i < y1; i++) {
+		for (uint8_t i = y0; i <= y1; i++) {
 			lcd_drawPixel(x0, i, color);
 		}
 	} else if (y0 == y1) {
 		//Horizontal line
-		for (uint8_t i = x0; i < x1; i++) {
+		for (uint8_t i = x0; i <= x1; i++) {
 			lcd_drawPixel(i, y0, color);
 		}
 	} else {
@@ -186,8 +163,15 @@ void lcd_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color) {
 }
 
 void lcd_fillRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color) {
-	for (uint8_t i = y; i < y + h; i++) {
+	for (uint8_t i = 0; i < h; i++) {
 		lcd_drawLine(x, y + i, x + w, y + i, color);
+	}
+}
+
+void lcd_clearArea(uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
+	for (uint8_t i = 0; i < h; i++) {
+		lcd_drawLine(x, y + i, x + w, y + i, LCD_WHITE);
+		LCD_BUFFER[y + i][LCD_RES_PX_X_b - 1] = 0x00; 	//transmit this line
 	}
 }
 
@@ -222,7 +206,6 @@ lcd_State_enum lcd_draw(void) {
 		lcd_state = LCD_SENDING_DATA;
 		HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_SET);
 		HAL_SPI_Transmit(&hspi1, (uint8_t*) &MLCD_WR, sizeof(MLCD_WR), HAL_MAX_DELAY);
-		lastDraw = getUnix();
 		lcd_DoTX();
 	}
 	return lcd_state;
@@ -257,6 +240,7 @@ static void lcd_DoTX() {
 		//Done
 		HAL_SPI_Transmit(&hspi1, (uint8_t*) &MLCD_TR, sizeof(MLCD_TR), HAL_MAX_DELAY); //send Trailer command
 		HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_RESET);
+		guiTimer = 0; //drawing done
 		lcd_state = LCD_TIMER; //Enter timer mode for power() to clear
 	}
 }

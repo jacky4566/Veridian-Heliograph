@@ -20,16 +20,16 @@ typedef enum {
 struct locationFix {
 	uint8_t Lat_Deg;
 	uint8_t Long_Deg;
-	uint16_t Lat_Dec;
-	uint16_t Long_Dec;
-	bool NS;
-	bool EW;
+	uint32_t Lat_Dec;
+	uint32_t Long_Dec;
+	bool SN;
+	bool WE;
 	uint16_t Elevation_M;
 	uint8_t HzAccM;
 };
 
 typedef enum {
-	GNSS_DEFAULT, GNSS_STOP, GNSS_Hot_Hold, GNSS_SLOW, GNSS_FAST
+	GNSS_STOP, GNSS_ON
 } GNSS_rate;
 
 extern uint32_t packets;

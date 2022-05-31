@@ -19,7 +19,7 @@
 #define LCD_RES_PX_X_b ((LCD_RES_PX_X / 8) + 2)
 #define LCD_RES_PX_Y (128)
 
-#define LCD_RATE_FAST_mV (3000)
+#define LCD_RATE_FAST_mV (2800)
 #define LCD_RATE_FAST (1)
 #define LCD_RATE_SLOW (15)
 
@@ -40,12 +40,13 @@ void lcd_clear(void); 			//Clear Display
 lcd_State_enum LCD_Power(); 	//Controls power state
 lcd_State_enum lcd_draw(void); 	//Draws lines, Call until return done
 
-void lcd_drawPixel(uint8_t x, uint8_t y, uint8_t bDraw);
+void lcd_drawPixel(int16_t x, int16_t y, uint8_t bDraw);
 void lcd_togglePixel (uint8_t x, uint8_t y);
 void lcd_setRotation(uint8_t newRot);
 void lcd_drawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t colour);
 void lcd_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t colour);
 void lcd_fillRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t colour);
+void lcd_clearArea(uint8_t x, uint8_t y, uint8_t w, uint8_t h);
 void lcd_SetFont(GFXfont *f);
 void lcd_SetCursor(uint8_t x, uint8_t y);
 void lcd_print(int n);

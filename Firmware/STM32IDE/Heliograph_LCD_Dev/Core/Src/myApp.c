@@ -17,13 +17,13 @@
 //Get the handle from main
 extern RTC_HandleTypeDef hrtc;
 extern ADC_HandleTypeDef hadc;
-extern TIM_HandleTypeDef htim2;
 
 //internal Functions
 static void goToIdle();
 static void goToSleep();
 static void printTime();
 static void drawHeader();
+static void drawGNSS();
 
 //defines
 #define TS_CAL1_CAL_ADDR 	((uint16_t*)((uint32_t)0x1FF8007A))
@@ -36,11 +36,10 @@ static void drawHeader();
 
 //Variable
 volatile int16_t superCapmV;
-volatile int16_t solarmV;
 volatile int16_t tempC;
 volatile static uint16_t ADC_raw[adc_Channels];
-
-uint32_t guiTimer;
+volatile uint32_t guiTimer;
+wakeUpSource lastWakeUpSource;
 
 //functions
 void myApp_init() {
@@ -53,9 +52,6 @@ void myApp_init() {
 	RCC->CFGR |= RCC_CFGR_STOPWUCK; //Wakeup with HSI16
 	HAL_PWREx_EnableUltraLowPower();
 	HAL_PWREx_EnableFastWakeUp();
-
-	//Micro Timer
-	//HAL_TIM_Base_Start(&htim2);
 
 	//GNSS
 	GNSS_Init();
@@ -71,25 +67,7 @@ void myApp_loop() {
 	if (LCD_Power() == LCD_READY) {
 		startADC();
 		drawHeader();
-		lcd_fillRect(0, 20, LCD_RES_PX_X -1, LCD_RES_PX_Y - 21, LCD_WHITE);
-		lcd_SetCursor(1, 60);
-		lcd_print(sprintf(strbuffer, "%lu", packets));
-		lcd_SetCursor(1, 80);
-		lcd_print(sprintf(strbuffer, "%.3d %.4d", LastFix.Lat_Deg, LastFix.Lat_Dec));
-		if (LastFix.NS) {
-			lcd_print_char('N');
-		} else {
-			lcd_print_char('S');
-		}
-		lcd_SetCursor(1, 100);
-		lcd_print(sprintf(strbuffer, "%.3d %.4d", LastFix.Long_Deg, LastFix.Long_Dec));
-		if (LastFix.EW) {
-			lcd_print_char('E');
-		} else {
-			lcd_print_char('W');
-		}
-		lcd_SetCursor(1, 120);
-		lcd_print(sprintf(strbuffer, "%d %d %d %d", getNumSatellites(), getFixType(), isGnssFixOk(), isTimeFullyResolved()));
+		drawGNSS();
 		while (lcd_draw() == LCD_SENDING_DATA) {
 			goToIdle();
 		}
@@ -104,54 +82,61 @@ static void goToIdle() {
 static void goToSleep() {
 	GNSS_Prep_Stop();
 	HAL_SuspendTick();
-	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
-	HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+	do {
+		lastWakeUpSource = WKUP_CLEAR;
+		__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+		HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+	} while (lastWakeUpSource == WKUP_LPUART);
+	LL_LPUART_DisableIT_WKUP(LPUART1);
 	HAL_ResumeTick();
 }
 
 static void drawHeader() {
-	lcd_fillRect(0, 0, 127, 16, LCD_WHITE);
-	//Base Line
+	lcd_clearArea(0, 0, 127, 16);
+//Base Line
 	lcd_drawLine(0, 17, 127, 17, LCD_BLACK);
-	//Time
+//Time
 	lcd_SetCursor(1, 14);
 	printTime();
-	//GPS STATE & Battery
-	if (GNSSlastRate == GNSS_SLOW) {
-		lcd_fillRect(92, 5, 3, 5, LCD_BLACK);
-	} else if (GNSSlastRate == GNSS_FAST) {
-		lcd_fillRect(92, 1, 3, 10, LCD_BLACK);
+//Battery
+	lcd_print(sprintf(strbuffer, "%.2d %.2d", superCapmV / 100, tempC));
+}
+
+static void drawGNSS() {
+	lcd_clearArea(0, 18, LCD_RES_PX_X - 1, 77);
+	//GPS STATE
+	if (GNSSlastRate == GNSS_ON) {
+		lcd_fillRect(124, 18, 3, 3, LCD_BLACK);
 	}
-	//Battery
-	lcd_SetCursor(102, 14);
-	lcd_print(sprintf(strbuffer, "%d", ((superCapmV - 2200) / 14)));
+	lcd_SetCursor(1, 32);
+	lcd_print(sprintf(strbuffer, "%.3d %.4d", LastFix.Lat_Deg, LastFix.Lat_Dec / 10));
+	if (LastFix.SN) {
+		lcd_print_char('S');
+	} else {
+		lcd_print_char('N');
+	}
+	lcd_SetCursor(1, 47);
+	lcd_print(sprintf(strbuffer, "%.3d %.4d", LastFix.Long_Deg, LastFix.Long_Dec / 10));
+	if (LastFix.WE) {
+		lcd_print_char('W');
+	} else {
+		lcd_print_char('E');
+	}
+	lcd_SetCursor(1, 62);
+	lcd_print(sprintf(strbuffer, "%d %d %d %d", getNumSatellites(), getFixType(), isGnssFixOk(), isTimeFullyResolved()));
+	lcd_SetCursor(1, 77);
+	lcd_print(sprintf(strbuffer, "%lu", packets));
 }
 
-uint32_t getUnix() {
+void setTimeGNSS() {
 	RTC_TimeTypeDef sTime;
 	RTC_DateTypeDef sDate;
-	struct tm tim;
-	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-	tim.tm_year = sDate.Year + 100; //years since 1900
-	tim.tm_mon = sDate.Month - 1;
-	tim.tm_mday = sDate.Date;
-	tim.tm_hour = sTime.Hours;
-	tim.tm_min = sTime.Minutes;
-	tim.tm_sec = sTime.Seconds;
-	return mktime(&tim);
-}
-
-void setTime(){
-	RTC_TimeTypeDef sTime;
-	RTC_DateTypeDef sDate;
-	sTime.Hours = GNSS_getHour();
+	sTime.Hours = GNSS_getHour() - 8;
 	sTime.Minutes = GNSS_getMin();
 	sTime.Seconds = GNSS_getSec();
 	sDate.Year = GNSS_getYear() - 2000;
 	sDate.Month = GNSS_getMonth();
 	sDate.Date = GNSS_getDay();
-
 	HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
 	HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 }
@@ -181,6 +166,11 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 
 	HAL_ADCEx_DisableVREFINT();
 	HAL_ADCEx_DisableVREFINTTempSensor();
+}
+
+void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc) {
+	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+	guiTimer++;
 }
 
 bool vBATOK() {
