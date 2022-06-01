@@ -26,17 +26,17 @@ static void drawHeader();
 static void drawGNSS();
 
 //defines
-#define TS_CAL1_CAL_ADDR 	((uint16_t*)((uint32_t)0x1FF8007A))
-#define TS_CAL1_TEMP		(uint16_t)(30)
-#define TS_CAL2_CAL_ADDR 	((uint16_t*)((uint32_t)0x1FF8007E))
-#define TS_CAL2_TEMP		(uint16_t)(130)
+#define TEMP30_CAL_ADDR 	((uint16_t*)((uint32_t)0x1FF8007A))
+#define TEMP30				(uint16_t)(30)
+#define TEMP130_CAL_ADDR 	((uint16_t*)((uint32_t)0x1FF8007E))
+#define TEMP130				(uint16_t)(130)
 #define VREFINT_CAL_ADDR 	((uint16_t*)((uint32_t)0x1FF80078))
 #define VREF_CAL_mV 		((uint32_t)3000)
 #define adc_Channels 		2
 
 //Variable
 volatile int16_t superCapmV;
-volatile int16_t tempC;
+volatile int32_t tempC;
 volatile static uint16_t ADC_raw[adc_Channels];
 volatile uint32_t guiTimer;
 wakeUpSource lastWakeUpSource;
@@ -46,8 +46,8 @@ void myApp_init() {
 	startADC();
 
 	//Power Stuff
-	SET_BIT(DBGMCU->CR, DBGMCU_CR_DBG_SLEEP);//Enable debug in sleep
-	SET_BIT(DBGMCU->CR, DBGMCU_CR_DBG_STOP); //Enable debug in stop
+	//SET_BIT(DBGMCU->CR, DBGMCU_CR_DBG_SLEEP);//Enable debug in sleep
+	//SET_BIT(DBGMCU->CR, DBGMCU_CR_DBG_STOP); //Enable debug in stop
 	__HAL_RCC_PWR_CLK_ENABLE();
 	RCC->CFGR |= RCC_CFGR_STOPWUCK; //Wakeup with HSI16
 	HAL_PWREx_EnableUltraLowPower();
@@ -68,15 +68,15 @@ void myApp_loop() {
 		startADC();
 		drawHeader();
 		drawGNSS();
-		while (lcd_draw() == LCD_SENDING_DATA) {
-			goToIdle();
-		}
+		goToIdle(); //wait for DMA services to finish
 	}
 	goToSleep();
 }
 
 static void goToIdle() {
-	HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
+	while ((lcd_draw() == LCD_SENDING_DATA)) {
+		HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
+	}
 }
 
 static void goToSleep() {
@@ -103,29 +103,37 @@ static void drawHeader() {
 }
 
 static void drawGNSS() {
-	lcd_clearArea(0, 18, LCD_RES_PX_X - 1, 77);
-	//GPS STATE
-	if (GNSSlastRate == GNSS_ON) {
-		lcd_fillRect(124, 18, 3, 3, LCD_BLACK);
+	if (GNSSnewData) {
+		lcd_clearArea(0, 18, LCD_RES_PX_X - 1, 96);
+		//GPS STATE
+		if (GNSSlastRate == GNSS_ON) {
+			lcd_fillRect(124, 18, 3, 3, LCD_BLACK);
+		}
+		lcd_SetCursor(1, 32);
+		lcd_print(sprintf(strbuffer, "%.3d %.4d", LastFix.Lat_Deg, LastFix.Lat_Dec / 10));
+		if (LastFix.SN) {
+			lcd_print_char('S');
+		} else {
+			lcd_print_char('N');
+		}
+		lcd_SetCursor(1, 48);
+		lcd_print(sprintf(strbuffer, "%.3d %.4d", LastFix.Long_Deg, LastFix.Long_Dec / 10));
+		if (LastFix.WE) {
+			lcd_print_char('W');
+		} else {
+			lcd_print_char('E');
+		}
+
+		lcd_SetCursor(1, 64);
+		lcd_print(sprintf(strbuffer, "Sat:%d Fix:%d", getNumSatellites(), getFixType()));
+
+		lcd_SetCursor(1, 80);
+		lcd_print(sprintf(strbuffer, "%dkph HD:%d", getGroundSpeed_kph(), getMotionHeading_deg()));
+
+		lcd_SetCursor(1, 96);
+		lcd_print(sprintf(strbuffer, "%lu", packets));
+		GNSSnewData = false;
 	}
-	lcd_SetCursor(1, 32);
-	lcd_print(sprintf(strbuffer, "%.3d %.4d", LastFix.Lat_Deg, LastFix.Lat_Dec / 10));
-	if (LastFix.SN) {
-		lcd_print_char('S');
-	} else {
-		lcd_print_char('N');
-	}
-	lcd_SetCursor(1, 47);
-	lcd_print(sprintf(strbuffer, "%.3d %.4d", LastFix.Long_Deg, LastFix.Long_Dec / 10));
-	if (LastFix.WE) {
-		lcd_print_char('W');
-	} else {
-		lcd_print_char('E');
-	}
-	lcd_SetCursor(1, 62);
-	lcd_print(sprintf(strbuffer, "%d %d %d %d", getNumSatellites(), getFixType(), isGnssFixOk(), isTimeFullyResolved()));
-	lcd_SetCursor(1, 77);
-	lcd_print(sprintf(strbuffer, "%lu", packets));
 }
 
 void setTimeGNSS() {
@@ -159,10 +167,13 @@ void startADC() {
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	//SCAN Forward from CHSEL0 to CHSEL18
 	//solarmV = ADC_raw[0];
-
 	superCapmV = VREF_CAL_mV * (*VREFINT_CAL_ADDR) / ADC_raw[0];
 
-	tempC = (((TS_CAL2_TEMP - TS_CAL1_TEMP ) * (ADC_raw[1] - *TS_CAL1_CAL_ADDR)) / (*TS_CAL2_CAL_ADDR - *TS_CAL1_CAL_ADDR)) + TS_CAL1_TEMP;
+	//Temperature
+	tempC = ((ADC_raw[1] * superCapmV / VREF_CAL_mV) - (int32_t) *TEMP30_CAL_ADDR);
+	tempC = tempC * (int32_t) (TEMP130 - TEMP30 );
+	tempC = tempC / (int32_t) (*TEMP130_CAL_ADDR - *TEMP30_CAL_ADDR);
+	tempC = tempC + 30;
 
 	HAL_ADCEx_DisableVREFINT();
 	HAL_ADCEx_DisableVREFINTTempSensor();

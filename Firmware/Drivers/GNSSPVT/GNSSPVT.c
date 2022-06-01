@@ -28,13 +28,13 @@ const uint8_t UBX_PAYLOAD_OFFSET_ = 4;
 const uint8_t UBX_NAV_CLASS_ = 0x01;
 const uint8_t UBX_NAV_PVT = 0x07;
 const uint8_t UBX_PVT_LEN_ = 92;
-uint32_t packets;
-uint16_t parser_pos_ = 0;
-uint8_t msg_len_buffer_[2];
-uint16_t msg_len_;
-uint8_t checksum_buffer_[2];
-uint8_t pvt_buffer_[96];
-uint8_t uart_buffer_[12];
+volatile uint32_t packets;
+volatile bool GNSSnewData =  true;
+volatile uint16_t parser_pos_ = 0;
+volatile uint8_t msg_len_buffer_[2];
+volatile uint16_t msg_len_;
+volatile uint8_t checksum_buffer_[2];
+volatile uint8_t pvt_buffer_[96];
 struct {
 	uint32_t itow;
 	uint16_t year;
@@ -182,12 +182,12 @@ void GNSS_Prep_Stop() {
 void GNSS_Power() {
 	switch (GNSSlastRate) {
 	case GNSS_STOP:
-		if (superCapmV > 3200) {
+		if (superCapmV > VBAT_GNSS_ON) {
 			GNSS_Set_Power(GNSS_ON);
 		}
 		break;
 	case GNSS_ON:
-		if (superCapmV < 2800) {
+		if (superCapmV < VBAT_GNSS_OFF) {
 			GNSS_Set_Power(GNSS_STOP);
 		}
 		break;
@@ -279,6 +279,7 @@ void parse(uint8_t byte_read) {
 		if (computed_checksum == received_checksum) {
 			memcpy(&ubx_nav_pvt, pvt_buffer_ + UBX_PAYLOAD_OFFSET_, UBX_PVT_LEN_);
 			updateLocation();
+			GNSSnewData = true;
 			packets++;
 			parser_pos_ = 0;
 		} else {

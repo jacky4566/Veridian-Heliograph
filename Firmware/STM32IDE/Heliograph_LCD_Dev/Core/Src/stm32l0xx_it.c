@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "myApp.h"
+#include "GNSSPVT.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

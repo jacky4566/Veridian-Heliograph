@@ -14,9 +14,6 @@
 #include "ls013b7dh03.h"
 #include "gfxfont.h"
 
-#define LCDFast (1)
-#define LCDSlow (15)
-
 //Handles
 extern SPI_HandleTypeDef hspi1;
 extern LPTIM_HandleTypeDef hlptim1; //Get the handle from main
@@ -68,9 +65,9 @@ lcd_State_enum LCD_Power() {
 	}
 
 	if (lcd_state == LCD_TIMER) {
-		if ((superCapmV > LCD_RATE_FAST_mV) && (guiTimer >= LCDFast)) {
+		if ((superCapmV > VBAT_LCD_FAST) && (guiTimer >= LCD_RATE_FAST)) {
 			lcd_state = LCD_READY;
-		} else if (guiTimer >= LCDSlow) {
+		} else if (guiTimer >= LCD_RATE_SLOW) {
 			lcd_state = LCD_READY;
 		}
 	}

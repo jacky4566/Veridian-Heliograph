@@ -19,10 +19,6 @@
 #define LCD_RES_PX_X_b ((LCD_RES_PX_X / 8) + 2)
 #define LCD_RES_PX_Y (128)
 
-#define LCD_RATE_FAST_mV (2800)
-#define LCD_RATE_FAST (1)
-#define LCD_RATE_SLOW (15)
-
 typedef enum  {
 	LCD_OFF, 			//Disabled
 	LCD_TIMER, 			//Standby, waiting for next timer

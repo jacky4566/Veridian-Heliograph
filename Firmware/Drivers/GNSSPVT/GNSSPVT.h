@@ -32,7 +32,8 @@ typedef enum {
 	GNSS_STOP, GNSS_ON
 } GNSS_rate;
 
-extern uint32_t packets;
+extern volatile uint32_t packets;
+extern volatile bool GNSSnewData;
 extern GNSS_rate GNSSlastRate;
 extern struct locationFix LastFix;
 
