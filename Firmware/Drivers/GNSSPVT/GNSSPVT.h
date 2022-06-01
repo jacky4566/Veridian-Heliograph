@@ -9,7 +9,6 @@
  */
 
 #include "main.h"
-#include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -17,23 +16,12 @@ typedef enum {
 	NO_FIX = 0, DEAD_RECKONING, FIX_2D, FIX_3D, GNSS_AND_DEAD_RECKONING, TIME_ONLY
 } GNSS_FixType;
 
-struct locationFix {
-	uint8_t Lat_Deg;
-	uint8_t Long_Deg;
-	uint32_t Lat_Dec;
-	uint32_t Long_Dec;
-	bool SN;
-	bool WE;
-	uint16_t Elevation_M;
-	uint8_t HzAccM;
-};
-
 typedef enum {
 	GNSS_STOP, GNSS_ON
 } GNSS_rate;
 
-extern volatile uint32_t packets;
-extern volatile bool GNSSnewData;
+extern volatile uint32_t GNSSlastPacket;
+extern volatile bool GNSSAlive;
 extern GNSS_rate GNSSlastRate;
 extern struct locationFix LastFix;
 
@@ -51,6 +39,10 @@ uint8_t GNSS_getMin();
 uint8_t GNSS_getSec();
 
 //Location
+float getLat();
+float getLong();
+int getElevation_M();
+uint8_t getHAcc();
 uint8_t getGroundSpeed_kph();
 uint8_t getMotionHeading_deg();
 

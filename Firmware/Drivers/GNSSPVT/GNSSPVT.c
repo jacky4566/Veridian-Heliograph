@@ -10,13 +10,11 @@
 #include "UBXDATA.h"
 #include "myApp.h"
 #include <string.h>
-#include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
 
 #define gnssFixOKmask 0x01
 #define timeFullyResolved 0x04
-#define longSignMask (0x80000000)
 
 //Power State
 GNSS_rate GNSSlastRate;
@@ -28,8 +26,8 @@ const uint8_t UBX_PAYLOAD_OFFSET_ = 4;
 const uint8_t UBX_NAV_CLASS_ = 0x01;
 const uint8_t UBX_NAV_PVT = 0x07;
 const uint8_t UBX_PVT_LEN_ = 92;
-volatile uint32_t packets;
-volatile bool GNSSnewData =  true;
+volatile uint32_t GNSSlastPacket;
+volatile bool GNSSAlive;
 volatile uint16_t parser_pos_ = 0;
 volatile uint8_t msg_len_buffer_[2];
 volatile uint16_t msg_len_;
@@ -70,14 +68,12 @@ struct {
 	int16_t magdec;
 	uint16_t magacc;
 } ubx_nav_pvt;
-struct locationFix LastFix;
 
 //Private functions
 void parse(uint8_t byte_read);
 uint16_t Checksum(uint8_t *data, uint16_t len);
 static void GNSS_Set_Power(GNSS_rate);
 static void LPUART_Transmit(uint8_t *pData, uint16_t Size, uint32_t Timeout);
-static void updateLocation();
 
 //Functions
 //Time
@@ -101,26 +97,33 @@ uint8_t GNSS_getSec() {
 }
 
 //Location
-void updateLocation() {
-	LastFix.Lat_Deg = (uint8_t) (abs(ubx_nav_pvt.lat_deg) / 10000000UL);
-	LastFix.Long_Deg = (uint8_t) (abs(ubx_nav_pvt.lon_deg) / 10000000UL);
-	LastFix.Lat_Dec = (uint32_t) (abs(ubx_nav_pvt.lat_deg) % 10000000UL);
-	LastFix.Long_Dec = (uint32_t) (abs(ubx_nav_pvt.lon_deg) % 10000000UL);
-	LastFix.SN = ubx_nav_pvt.lat_deg & longSignMask;
-	LastFix.WE = ubx_nav_pvt.lon_deg & longSignMask;
-	LastFix.Elevation_M = (uint16_t) (abs(ubx_nav_pvt.hmsl) / 1000UL);
-	if (ubx_nav_pvt.hacc > 255) {
-		LastFix.HzAccM = 0xff;
+float getLat() {
+	return ((float) ubx_nav_pvt.lat_deg) * 1e-7;
+}
+
+float getLong() {
+	return ((float) ubx_nav_pvt.lon_deg) * 1e-7;
+}
+
+int getElevation_M() {
+	return ubx_nav_pvt.hmsl / 1000;
+}
+
+uint8_t getHAcc() {
+	uint32_t returnAcc = ubx_nav_pvt.hacc / 1000; // m
+	if (returnAcc > 255) {
+		return (uint8_t) 0xff;
 	} else {
-		LastFix.HzAccM = (uint8_t) (abs(ubx_nav_pvt.hacc) / 1000UL);
-	}
-	if (isTimeFullyResolved()) {
-		setTimeGNSS();
+		return (uint8_t) returnAcc;
 	}
 }
 
 uint8_t getGroundSpeed_kph() {
-	return (uint8_t) (ubx_nav_pvt.gspeed * ((1000UL * 1000UL) / 3600UL));
+	uint32_t returnSpeed = ((ubx_nav_pvt.gspeed / 1000) * 3600) / 1000; // km/h
+	if (returnSpeed > 255) {
+		return (uint8_t) 255;
+	}
+	return (uint8_t) (returnSpeed);
 }
 uint8_t getMotionHeading_deg() {
 	return (uint8_t) (ubx_nav_pvt.headmot / 10000UL);
@@ -130,12 +133,15 @@ uint8_t getMotionHeading_deg() {
 uint8_t getNumSatellites() {
 	return ubx_nav_pvt.numsv;
 }
+
 GNSS_FixType getFixType() {
 	return (GNSS_FixType) ubx_nav_pvt.fix;
 }
+
 bool isGnssFixOk() {
 	return ubx_nav_pvt.flags & gnssFixOKmask;
 }
+
 bool isTimeFullyResolved() {
 	return ubx_nav_pvt.valid & timeFullyResolved;
 }
@@ -144,7 +150,6 @@ void GNSS_Init() {
 	//Enable Interrupts and STOP0
 	LL_LPUART_Enable(LPUART1);
 	LPUART_Transmit((uint8_t*) 0xff, 1, HAL_MAX_DELAY); //wakeup
-	HAL_Delay(400);
 //Turn off a bunch of stuff
 	LPUART_Transmit((uint8_t*) &UBX_NAV_GGA_OFF, sizeof(UBX_NAV_GGA_OFF), HAL_MAX_DELAY);
 	LPUART_Transmit((uint8_t*) &UBX_NAV_GLL_OFF, sizeof(UBX_NAV_GLL_OFF), HAL_MAX_DELAY);
@@ -195,16 +200,17 @@ void GNSS_Power() {
 }
 
 static void GNSS_Set_Power(GNSS_rate newRate) {
-	LPUART_CharReception_Callback();
 	if (newRate == GNSSlastRate) {
 		return;
 	}
 	switch (newRate) {
 	case GNSS_STOP:
+		GNSSAlive = false;
 		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_RESET);
 		GNSSlastRate = GNSS_STOP;
 		break;
 	case GNSS_ON:
+		LPUART_Transmit((uint8_t*) 0xff, 1, HAL_MAX_DELAY); //wakeup
 		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_SET);
 		GNSSlastRate = GNSS_ON;
 		break;
@@ -277,10 +283,14 @@ void parse(uint8_t byte_read) {
 		uint16_t received_checksum = ((uint16_t) checksum_buffer_[1]) << 8 | checksum_buffer_[0];
 		uint16_t computed_checksum = Checksum(pvt_buffer_, msg_len_ + UBX_HEADER_LEN_);
 		if (computed_checksum == received_checksum) {
-			memcpy(&ubx_nav_pvt, pvt_buffer_ + UBX_PAYLOAD_OFFSET_, UBX_PVT_LEN_);
-			updateLocation();
-			GNSSnewData = true;
-			packets++;
+			if (pvt_buffer_[20 + UBX_PAYLOAD_OFFSET_] >= FIX_2D) {
+				memcpy(&ubx_nav_pvt, pvt_buffer_ + UBX_PAYLOAD_OFFSET_, UBX_PVT_LEN_);
+				GNSSlastPacket = 0;
+				if (isTimeFullyResolved()) {
+					setTimeGNSS();
+				}
+			}
+			GNSSAlive = !GNSSAlive;
 			parser_pos_ = 0;
 		} else {
 			parser_pos_ = 0;
@@ -295,7 +305,6 @@ void LPUART_CharReception_Callback(void) {
 }
 
 static void LPUART_Transmit(uint8_t *pData, uint16_t Size, uint32_t Timeout) {
-	LL_LPUART_EnableDirectionTx(LPUART1);
 	if ((pData == NULL) || (Size == 0U)) {
 		return;
 	}
@@ -312,6 +321,5 @@ static void LPUART_Transmit(uint8_t *pData, uint16_t Size, uint32_t Timeout) {
 	/* Wait for TC flag to be raised for last char */
 	while (!LL_LPUART_IsActiveFlag_TC(LPUART1)) {
 	}
-	LL_LPUART_DisableDirectionTx(LPUART1);
 }
 

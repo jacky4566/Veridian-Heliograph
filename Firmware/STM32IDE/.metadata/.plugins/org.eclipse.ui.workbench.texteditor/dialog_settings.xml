@@ -1,28 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
-		<item key="selection" value="sTime"/>
+		<item key="selection" value="fix"/>
 		<item key="wrap" value="true"/>
 		<item key="casesensitive" value="false"/>
 		<item key="wholeword" value="true"/>
 		<item key="incremental" value="false"/>
 		<item key="isRegEx" value="false"/>
 		<list key="findhistory">
-			<item value="sTime"/>
+			<item value="fix"/>
+			<item value="GNSS_Set_Power"/>
+			<item value="lcd_SetCursor"/>
+			<item value="GNSSnewData"/>
+			<item value="LCD_RATE_FAST_mV"/>
+			<item value="adcRunning"/>
 			<item value="tempC"/>
+			<item value="VREFINT_CAL_ADDR"/>
+			<item value="TS_CAL1_TEMP"/>
+			<item value="adcCounter"/>
+			<item value="sTime"/>
 			<item value="Long_Deg"/>
 			<item value="cursor_x"/>
 			<item value="strbuffer"/>
 			<item value="lastDraw"/>
-			<item value="getUnix"/>
-			<item value="LCD_Power"/>
-			<item value="lcd_SetCursor"/>
-			<item value="lastWakeUpSource"/>
-			<item value="TE"/>
-			<item value="TX"/>
-			<item value="LPUART_Transmit"/>
-			<item value=" "/>
-			<item value="(superCapmV - 2200) / 14)"/>
 		</list>
 		<list key="replacehistory">
 			<item value=", 0x"/>

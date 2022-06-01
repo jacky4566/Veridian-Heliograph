@@ -6,17 +6,28 @@
  */
 
 #include "main.h"
+#include "math.h"
 #include "myApp.h"
 #include <time.h>
 #include <stdbool.h>
 #include "UBXDATA.h"
 #include "LS013B7DH03.h"
-#include <Fonts/FreeSans9pt7b.h>
+#include <Fonts/FreeSans9pt7bMod.h>
 #include "GNSSPVT.h"
+
+#define NANOPRINTF_USE_FIELD_WIDTH_FORMAT_SPECIFIERS 1
+#define NANOPRINTF_USE_PRECISION_FORMAT_SPECIFIERS 1
+#define NANOPRINTF_USE_LARGE_FORMAT_SPECIFIERS 0
+#define NANOPRINTF_USE_FLOAT_FORMAT_SPECIFIERS 1
+#define NANOPRINTF_USE_BINARY_FORMAT_SPECIFIERS 0
+#define NANOPRINTF_USE_WRITEBACK_FORMAT_SPECIFIERS 0
+#define NANOPRINTF_IMPLEMENTATION
+#include "nanoprintf.h"
 
 //Get the handle from main
 extern RTC_HandleTypeDef hrtc;
 extern ADC_HandleTypeDef hadc;
+extern IWDG_HandleTypeDef hiwdg;
 
 //internal Functions
 static void goToIdle();
@@ -43,6 +54,7 @@ wakeUpSource lastWakeUpSource;
 
 //functions
 void myApp_init() {
+	HAL_IWDG_Refresh(&hiwdg); //Kick watchdog
 	startADC();
 
 	//Power Stuff
@@ -58,17 +70,19 @@ void myApp_init() {
 
 	//LCD
 	lcd_init();
-	lcd_SetFont(&FreeSans9pt7b);
+	lcd_SetFont((GFXfont*) &FreeSans9pt7bMod);
 
 }
 
 void myApp_loop() {
+	HAL_IWDG_Refresh(&hiwdg); //Kick watchdog
 	GNSS_Power();
 	if (LCD_Power() == LCD_READY) {
 		startADC();
 		drawHeader();
 		drawGNSS();
 		goToIdle(); //wait for DMA services to finish
+		LCDTimer();
 	}
 	goToSleep();
 }
@@ -99,41 +113,43 @@ static void drawHeader() {
 	lcd_SetCursor(1, 14);
 	printTime();
 //Battery
-	lcd_print(sprintf(strbuffer, "%.2d %.2d", superCapmV / 100, tempC));
+	lcd_print(npf_snprintf(strbuffer, strbufferSize, " %3.2fV", (float) superCapmV / 1000.0f));
 }
 
 static void drawGNSS() {
-	if (GNSSnewData) {
-		lcd_clearArea(0, 18, LCD_RES_PX_X - 1, 96);
-		//GPS STATE
-		if (GNSSlastRate == GNSS_ON) {
-			lcd_fillRect(124, 18, 3, 3, LCD_BLACK);
-		}
-		lcd_SetCursor(1, 32);
-		lcd_print(sprintf(strbuffer, "%.3d %.4d", LastFix.Lat_Deg, LastFix.Lat_Dec / 10));
-		if (LastFix.SN) {
-			lcd_print_char('S');
-		} else {
-			lcd_print_char('N');
-		}
-		lcd_SetCursor(1, 48);
-		lcd_print(sprintf(strbuffer, "%.3d %.4d", LastFix.Long_Deg, LastFix.Long_Dec / 10));
-		if (LastFix.WE) {
-			lcd_print_char('W');
-		} else {
-			lcd_print_char('E');
-		}
-
-		lcd_SetCursor(1, 64);
-		lcd_print(sprintf(strbuffer, "Sat:%d Fix:%d", getNumSatellites(), getFixType()));
-
-		lcd_SetCursor(1, 80);
-		lcd_print(sprintf(strbuffer, "%dkph HD:%d", getGroundSpeed_kph(), getMotionHeading_deg()));
-
-		lcd_SetCursor(1, 96);
-		lcd_print(sprintf(strbuffer, "%lu", packets));
-		GNSSnewData = false;
+	lcd_clearArea(0, 18, LCD_RES_PX_X - 1, 96);
+	//GPS STATE
+	if (GNSSlastRate == GNSS_ON) {
+		lcd_fillRect(124, 18, 3, 3, LCD_BLACK);
 	}
+	if (GNSSAlive){
+		lcd_fillRect(124, 22, 3, 3, LCD_BLACK);
+	}
+
+	//Lat Long
+	lcd_SetCursor(1, 32);
+	lcd_print(npf_snprintf(strbuffer, strbufferSize, "%9.4f ", fabsf(getLat())));
+	if (getLat() < 0) {
+		lcd_print_char('S');
+	} else {
+		lcd_print_char('N');
+	}
+	lcd_SetCursor(1, 48);
+	lcd_print(npf_snprintf(strbuffer, strbufferSize, "%9.4f ", fabsf(getLong())));
+	if (getLong() < 0) {
+		lcd_print_char('W');
+	} else {
+		lcd_print_char('E');
+	}
+
+	lcd_SetCursor(1, 64);
+	lcd_print(npf_snprintf(strbuffer, strbufferSize, "Sat:%d Fix:%d", getNumSatellites(), getFixType()));
+
+	lcd_SetCursor(1, 80);
+	lcd_print(npf_snprintf(strbuffer, strbufferSize, "%dkph HD:%d", getGroundSpeed_kph(), getMotionHeading_deg()));
+
+	lcd_SetCursor(1, 96);
+	lcd_print(npf_snprintf(strbuffer, strbufferSize, "%dC age:%lu", (int) tempC, GNSSlastPacket));
 }
 
 void setTimeGNSS() {
@@ -154,7 +170,7 @@ void printTime() {
 	RTC_DateTypeDef sDate;
 	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
 	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-	lcd_print(sprintf(strbuffer, "%02d:%02d:%02d ", sTime.Hours, sTime.Minutes, sTime.Seconds));
+	lcd_print(npf_snprintf(strbuffer, strbufferSize, "%02d:%02d:%02d ", sTime.Hours, sTime.Minutes, sTime.Seconds));
 }
 
 void startADC() {
@@ -169,7 +185,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	//solarmV = ADC_raw[0];
 	superCapmV = VREF_CAL_mV * (*VREFINT_CAL_ADDR) / ADC_raw[0];
 
-	//Temperature
+	//Temperature, Magic code from Datasheet
 	tempC = ((ADC_raw[1] * superCapmV / VREF_CAL_mV) - (int32_t) *TEMP30_CAL_ADDR);
 	tempC = tempC * (int32_t) (TEMP130 - TEMP30 );
 	tempC = tempC / (int32_t) (*TEMP130_CAL_ADDR - *TEMP30_CAL_ADDR);
@@ -182,6 +198,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc) {
 	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
 	guiTimer++;
+	GNSSlastPacket++;
 }
 
 bool vBATOK() {

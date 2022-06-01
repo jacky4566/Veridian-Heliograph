@@ -40,5 +40,10 @@
 			<type>2</type>
 			<location>C:/GitHub/Veridian-Heliograph/Firmware/Drivers/SharpMemLCD</location>
 		</link>
+		<link>
+			<name>Drivers/nanoprintf-main</name>
+			<type>2</type>
+			<location>C:/GitHub/Veridian-Heliograph/Firmware/Drivers/nanoprintf</location>
+		</link>
 	</linkedResources>
 </projectDescription>

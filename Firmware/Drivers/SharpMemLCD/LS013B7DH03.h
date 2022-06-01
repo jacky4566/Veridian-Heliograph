@@ -9,7 +9,6 @@
 #define SHARPMEMLCD_LS013B7DH03_H_
 
 #include <stdint.h>
-#include <stdio.h>
 #include <stdbool.h>
 #include "gfxfont.h"
 
@@ -18,6 +17,7 @@
 #define LCD_RES_PX_X (128)
 #define LCD_RES_PX_X_b ((LCD_RES_PX_X / 8) + 2)
 #define LCD_RES_PX_Y (128)
+#define strbufferSize 20
 
 typedef enum  {
 	LCD_OFF, 			//Disabled
@@ -33,6 +33,7 @@ extern uint8_t LCDnextUpdatePeriod;
 //Functions
 void lcd_init(void);			//Start LCD
 void lcd_clear(void); 			//Clear Display
+void LCDTimer();						//Done drawing this GUI loop
 lcd_State_enum LCD_Power(); 	//Controls power state
 lcd_State_enum lcd_draw(void); 	//Draws lines, Call until return done
 

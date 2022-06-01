@@ -6,7 +6,6 @@
  */
 
 #include "main.h"
-#include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -25,7 +24,7 @@ static const uint8_t MLCD_TR = 0x00; //MLCD trailer
 
 //Buffers
 static uint8_t LCD_BUFFER[LCD_RES_PX_Y][LCD_RES_PX_X_b];
-char strbuffer[20];
+char strbuffer[strbufferSize];
 
 //Variables
 static uint8_t rotation;
@@ -44,6 +43,7 @@ static uint8_t lcd_writeChar(uint8_t x, uint8_t y, uint8_t c);
 //Functions
 void lcd_init() {
 	LCD_Power();
+	//HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_RESET); //Disable display
 	lcd_clear();
 }
 
@@ -237,9 +237,13 @@ static void lcd_DoTX() {
 		//Done
 		HAL_SPI_Transmit(&hspi1, (uint8_t*) &MLCD_TR, sizeof(MLCD_TR), HAL_MAX_DELAY); //send Trailer command
 		HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_RESET);
-		guiTimer = 0; //drawing done
-		lcd_state = LCD_TIMER; //Enter timer mode for power() to clear
+		lcd_state = LCD_READY;
 	}
+}
+
+void LCDTimer() {
+	guiTimer = 0; //drawing done
+	lcd_state = LCD_TIMER; //Enter timer mode for power() to clear
 }
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
