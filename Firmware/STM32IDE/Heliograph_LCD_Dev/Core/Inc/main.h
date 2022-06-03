@@ -74,6 +74,7 @@ void Error_Handler(void);
 #define Debug_GPIO_Port GPIOA
 #define VBAT_OK_PIN_Pin GPIO_PIN_1
 #define VBAT_OK_PIN_GPIO_Port GPIOB
+#define VBAT_OK_PIN_EXTI_IRQn EXTI0_1_IRQn
 #define DISP_EN_Pin GPIO_PIN_8
 #define DISP_EN_GPIO_Port GPIOA
 #define DISP_CS_Pin GPIO_PIN_10

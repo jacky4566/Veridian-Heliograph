@@ -12,18 +12,19 @@
 
 //External Variables
 extern volatile int16_t superCapmV;
-extern volatile int16_t solarmV;
 extern volatile int32_t tempC;
 extern volatile uint32_t guiTimer;
 
 #define LCD_RATE_FAST (1)
 #define LCD_RATE_SLOW (15)
-#define VBAT_GNSS_ON   ((int16_t) 3450 )
-#define VBAT_GNSS_OFF  ((int16_t) 2800 )
-#define VBAT_LCD_FAST  ((int16_t) 2750 )
+#define mV_GNSS_ON    ((int16_t) 3450 )
+#define mV_GNSS_OFF   ((int16_t) 2800 )
+#define mV_LCD_OFF    ((int16_t) 2500 )
+#define mV_LCD_SLOW   ((int16_t) 2750 )
+#define mV_LCD_FAST   ((int16_t) 3000 )
 
 typedef enum {
-	WKUP_CLEAR, WKUP_LPUART, WKUP_RTC
+	WKUP_CLEAR, WKUP_LPUART, WKUP_RTC, WKUP_EXTIO, WKUP_ADC
 } wakeUpSource;
 
 extern wakeUpSource lastWakeUpSource;

@@ -47,27 +47,37 @@ void lcd_init() {
 }
 
 lcd_State_enum LCD_Power() {
-	if (!vBATOK()) {
-		//Vbat not ok
-		if (lcd_state == LCD_SENDING_DATA || lcd_state == LCD_SENDING_CLR) {
-			HAL_SPI_DMAStop(&hspi1);
+	switch (lcd_state) {
+	case LCD_OFF:
+		if (superCapmV > mV_LCD_SLOW) {
+			//Turn on LCD
+			lcd_state = LCD_READY;
+			//HAL_LPTIM_PWM_Start(&hlptim1, 2047, 1023); //32768 DIV16 DIV2048 1HZ
+			HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_SET); //Enable display
 		}
-		lcd_state = LCD_OFF;
-		//HAL_LPTIM_PWM_Stop(&hlptim1);
-		HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_RESET); //Disable display
-		return lcd_state; //no need to proceed further
-	} else if (vBATOK() && (lcd_state == LCD_OFF)) {
-		//Turn on LCD
-		lcd_state = LCD_READY;
-		//HAL_LPTIM_PWM_Start(&hlptim1, 2047, 1023); //32768 DIV16 DIV2048 1HZ
-		HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_SET); //Enable display
-	}
-
-	if (lcd_state == LCD_TIMER) {
-		if ((superCapmV > VBAT_LCD_FAST) && (guiTimer >= LCD_RATE_FAST)) {
+		break;
+	case LCD_TIMER:
+		if (superCapmV < mV_LCD_OFF) {
+			lcd_state = LCD_OFF;
+			HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_RESET);
+		} else if ((superCapmV > mV_LCD_FAST) && (guiTimer >= LCD_RATE_FAST)) {
 			lcd_state = LCD_READY;
 		} else if (guiTimer >= LCD_RATE_SLOW) {
 			lcd_state = LCD_READY;
+		}
+		break;
+	case LCD_READY:
+		if (superCapmV < mV_LCD_OFF) {
+			lcd_state = LCD_OFF;
+			HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_RESET);
+		}
+		break;
+	case LCD_SENDING_DATA:
+	case LCD_SENDING_CLR:
+		if (superCapmV < mV_LCD_OFF) {
+			HAL_SPI_DMAStop(&hspi1);
+			lcd_state = LCD_OFF;
+			HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_RESET);
 		}
 	}
 	return lcd_state;
@@ -180,6 +190,9 @@ void lcd_setRotation(uint8_t newRot) {
 }
 
 void lcd_clear(void) {
+	if (lcd_state = LCD_OFF){
+		return;
+	}
 	uint8_t clearBuffer[] = { MLCD_CM, MLCD_TR };
 	lcd_state = LCD_SENDING_CLR;
 	HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_SET);
