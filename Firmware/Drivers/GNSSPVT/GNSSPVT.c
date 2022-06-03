@@ -17,7 +17,7 @@
 #define timeFullyResolved 0x04
 
 //Power State
-GNSS_rate GNSSlastRate;
+GNSS_rate GNSSlastRate = GNSS_UINT;
 
 //Parsing stuff
 const uint8_t UBX_HEADER_[2] = { 0xB5, 0x62 };
@@ -28,6 +28,7 @@ const uint8_t UBX_NAV_PVT = 0x07;
 const uint8_t UBX_PVT_LEN_ = 92;
 volatile uint32_t GNSSlastPacket;
 volatile bool GNSSAlive;
+volatile bool GNSSNewData = true;
 volatile uint16_t parser_pos_ = 0;
 volatile uint8_t msg_len_buffer_[2];
 volatile uint16_t msg_len_;
@@ -147,25 +148,12 @@ bool isTimeFullyResolved() {
 }
 
 void GNSS_Init() {
-	//Enable Interrupts and STOP0
 	LL_LPUART_Enable(LPUART1);
-	LPUART_Transmit((uint8_t*) 0xff, 1, HAL_MAX_DELAY); //wakeup
-//Turn off a bunch of stuff
-	LPUART_Transmit((uint8_t*) &UBX_NAV_GGA_OFF, sizeof(UBX_NAV_GGA_OFF), HAL_MAX_DELAY);
-	LPUART_Transmit((uint8_t*) &UBX_NAV_GLL_OFF, sizeof(UBX_NAV_GLL_OFF), HAL_MAX_DELAY);
-	LPUART_Transmit((uint8_t*) &UBX_NAV_GSA_OFF, sizeof(UBX_NAV_GSA_OFF), HAL_MAX_DELAY);
-	LPUART_Transmit((uint8_t*) &UBX_NAV_GSV_OFF, sizeof(UBX_NAV_GSV_OFF), HAL_MAX_DELAY);
-	LPUART_Transmit((uint8_t*) &UBX_NAV_GSV_OFF, sizeof(UBX_NAV_GSV_OFF), HAL_MAX_DELAY);
-	LPUART_Transmit((uint8_t*) &UBX_NAV_RMC_OFF, sizeof(UBX_NAV_RMC_OFF), HAL_MAX_DELAY);
-	LPUART_Transmit((uint8_t*) &UBX_NAV_VTG_OFF, sizeof(UBX_NAV_VTG_OFF), HAL_MAX_DELAY);
-//Enable PVT message
-	LPUART_Transmit((uint8_t*) &UBX_NAV_PVT_ON, sizeof(UBX_NAV_PVT_ON), HAL_MAX_DELAY);
-//Send PM2
-	LPUART_Transmit((uint8_t*) &UBX_CFG_PM2, sizeof(UBX_CFG_PM2), HAL_MAX_DELAY);
-//Save
-	LPUART_Transmit((uint8_t*) &UBX_CFG_CFG, sizeof(UBX_CFG_CFG), HAL_MAX_DELAY);
 //Turn off
 	HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_RESET); //DISABLE GNSS
+//Enable Interrupts
+	LL_LPUART_EnableIT_RXNE(LPUART1);
+	LL_LPUART_SetWKUPType(LPUART1, LL_LPUART_WAKEUP_ON_RXNE); //Set the wake-up event type : specify wake-up on RXNE flag
 }
 
 void GNSS_Prep_Stop() {
@@ -186,6 +174,12 @@ void GNSS_Prep_Stop() {
 
 void GNSS_Power() {
 	switch (GNSSlastRate) {
+	case GNSS_UINT:
+		if (superCapmV > VBAT_GNSS_ON) {
+			//Don't power up GNSS until we have sufficient voltage
+			GNSS_Set_Power(GNSS_ON);
+		}
+		break;
 	case GNSS_STOP:
 		if (superCapmV > VBAT_GNSS_ON) {
 			GNSS_Set_Power(GNSS_ON);
@@ -209,8 +203,29 @@ static void GNSS_Set_Power(GNSS_rate newRate) {
 		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_RESET);
 		GNSSlastRate = GNSS_STOP;
 		break;
+	case GNSS_UINT:
+		//should never need this
 	case GNSS_ON:
-		LPUART_Transmit((uint8_t*) 0xff, 1, HAL_MAX_DELAY); //wakeup
+		if (GNSSlastRate == GNSS_UINT) {
+			//Run this one time
+			//Wakeup
+			HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_SET);
+			LPUART_Transmit((uint8_t*) &UBX_CFG_PWR_RUN, sizeof(UBX_CFG_PWR_RUN), HAL_MAX_DELAY);
+			//Enable PVT message
+			LPUART_Transmit((uint8_t*) &UBX_NAV_PVT_ON, sizeof(UBX_NAV_PVT_ON), HAL_MAX_DELAY);
+			//Turn off a bunch of stuff
+			LPUART_Transmit((uint8_t*) &UBX_NAV_GGA_OFF, sizeof(UBX_NAV_GGA_OFF), HAL_MAX_DELAY);
+			LPUART_Transmit((uint8_t*) &UBX_NAV_GLL_OFF, sizeof(UBX_NAV_GLL_OFF), HAL_MAX_DELAY);
+			LPUART_Transmit((uint8_t*) &UBX_NAV_GSA_OFF, sizeof(UBX_NAV_GSA_OFF), HAL_MAX_DELAY);
+			LPUART_Transmit((uint8_t*) &UBX_NAV_GSV_OFF, sizeof(UBX_NAV_GSV_OFF), HAL_MAX_DELAY);
+			LPUART_Transmit((uint8_t*) &UBX_NAV_GSV_OFF, sizeof(UBX_NAV_GSV_OFF), HAL_MAX_DELAY);
+			LPUART_Transmit((uint8_t*) &UBX_NAV_RMC_OFF, sizeof(UBX_NAV_RMC_OFF), HAL_MAX_DELAY);
+			LPUART_Transmit((uint8_t*) &UBX_NAV_VTG_OFF, sizeof(UBX_NAV_VTG_OFF), HAL_MAX_DELAY);
+			//Send PM2
+			LPUART_Transmit((uint8_t*) &UBX_CFG_PM2, sizeof(UBX_CFG_PM2), HAL_MAX_DELAY);
+			//Save
+			LPUART_Transmit((uint8_t*) &UBX_CFG_CFG, sizeof(UBX_CFG_CFG), HAL_MAX_DELAY);
+		}
 		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_SET);
 		GNSSlastRate = GNSS_ON;
 		break;
@@ -289,6 +304,7 @@ void parse(uint8_t byte_read) {
 				if (isTimeFullyResolved()) {
 					setTimeGNSS();
 				}
+				GNSSNewData = true;
 			}
 			GNSSAlive = !GNSSAlive;
 			parser_pos_ = 0;
@@ -321,5 +337,6 @@ static void LPUART_Transmit(uint8_t *pData, uint16_t Size, uint32_t Timeout) {
 	/* Wait for TC flag to be raised for last char */
 	while (!LL_LPUART_IsActiveFlag_TC(LPUART1)) {
 	}
+	HAL_Delay(12);
 }
 

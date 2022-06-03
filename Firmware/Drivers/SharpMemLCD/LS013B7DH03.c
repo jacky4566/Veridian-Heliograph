@@ -15,7 +15,7 @@
 
 //Handles
 extern SPI_HandleTypeDef hspi1;
-extern LPTIM_HandleTypeDef hlptim1; //Get the handle from main
+//extern LPTIM_HandleTypeDef hlptim1; //Get the handle from main
 
 //Commands
 static const uint8_t MLCD_WR = 0x01; //MLCD write line command
@@ -43,7 +43,6 @@ static uint8_t lcd_writeChar(uint8_t x, uint8_t y, uint8_t c);
 //Functions
 void lcd_init() {
 	LCD_Power();
-	//HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_RESET); //Disable display
 	lcd_clear();
 }
 
@@ -54,13 +53,13 @@ lcd_State_enum LCD_Power() {
 			HAL_SPI_DMAStop(&hspi1);
 		}
 		lcd_state = LCD_OFF;
-		HAL_LPTIM_PWM_Stop(&hlptim1);
+		//HAL_LPTIM_PWM_Stop(&hlptim1);
 		HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_RESET); //Disable display
 		return lcd_state; //no need to proceed further
 	} else if (vBATOK() && (lcd_state == LCD_OFF)) {
 		//Turn on LCD
 		lcd_state = LCD_READY;
-		HAL_LPTIM_PWM_Start(&hlptim1, 2047, 1023); //32768 DIV16 DIV2048 1HZ
+		//HAL_LPTIM_PWM_Start(&hlptim1, 2047, 1023); //32768 DIV16 DIV2048 1HZ
 		HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_SET); //Enable display
 	}
 
@@ -125,9 +124,8 @@ void lcd_drawPixel(int16_t x, int16_t y, uint8_t bDraw) {
 	if (x < 0 || y < 0 || x >= LCD_RES_PX_X || y >= LCD_RES_PX_Y)
 		return;
 
-	uint8_t xx = (x / 8) + 1; //X byte in array
 	uint8_t XbitInByte = (0x01 << (x % 8));
-//check if pixel needs updating
+	uint8_t xx = (x / 8) + 1; //X byte in array
 	if (bDraw == LCD_WHITE) { //Set bit
 		LCD_BUFFER[y][xx] |= XbitInByte; 	//set bit
 	} else {
@@ -165,10 +163,14 @@ void lcd_fillRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color) {
 	}
 }
 
-void lcd_clearArea(uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
-	for (uint8_t i = 0; i < h; i++) {
-		lcd_drawLine(x, y + i, x + w, y + i, LCD_WHITE);
-		LCD_BUFFER[y + i][LCD_RES_PX_X_b - 1] = 0x00; 	//transmit this line
+void lcd_clearLines(uint8_t y0, uint8_t y1) {
+	//Clear lines for writing
+	while (y0 <= y1) {
+		for (uint8_t xByte = 1; xByte < (LCD_RES_PX_X_b - 1); xByte++) {
+			LCD_BUFFER[y0][xByte] = 0xff; 	//Clear line
+		}
+		LCD_BUFFER[y0][LCD_RES_PX_X_b - 1] = 0x00; 		//transmit this line
+		y0++;
 	}
 }
 
@@ -237,13 +239,9 @@ static void lcd_DoTX() {
 		//Done
 		HAL_SPI_Transmit(&hspi1, (uint8_t*) &MLCD_TR, sizeof(MLCD_TR), HAL_MAX_DELAY); //send Trailer command
 		HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_RESET);
-		lcd_state = LCD_READY;
+		guiTimer = 0; //drawing done
+		lcd_state = LCD_TIMER; //Enter timer mode for power() to clear
 	}
-}
-
-void LCDTimer() {
-	guiTimer = 0; //drawing done
-	lcd_state = LCD_TIMER; //Enter timer mode for power() to clear
 }
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {

@@ -70,6 +70,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define GNSS_EXT_Pin GPIO_PIN_1
 #define GNSS_EXT_GPIO_Port GPIOA
+#define Debug_Pin GPIO_PIN_4
+#define Debug_GPIO_Port GPIOA
 #define VBAT_OK_PIN_Pin GPIO_PIN_1
 #define VBAT_OK_PIN_GPIO_Port GPIOB
 #define DISP_EN_Pin GPIO_PIN_8
