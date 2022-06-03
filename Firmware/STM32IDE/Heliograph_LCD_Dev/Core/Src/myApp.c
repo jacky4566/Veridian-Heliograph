@@ -147,16 +147,16 @@ static void drawHeader() {
 
 static void drawGNSS() {
 	if (GNSSNewData) {
-		lcd_clearLines(34, 96);
+		lcd_clearLines(34, 97);
 		lcd_SetCursor(1, 48);
-		lcd_print(npf_snprintf(strbuffer, strbufferSize, "%7.4f ", fabsf(getLat())));
+		lcd_print(npf_snprintf(strbuffer, strbufferSize, "%8.4f ", fabsf(getLat())));
 		if (getLat() < 0) {
 			lcd_print_char('S');
 		} else {
 			lcd_print_char('N');
 		}
 		lcd_SetCursor(1, 64);
-		lcd_print(npf_snprintf(strbuffer, strbufferSize, "%7.4f ", fabsf(getLong())));
+		lcd_print(npf_snprintf(strbuffer, strbufferSize, "%8.4f ", fabsf(getLong())));
 		if (getLong() < 0) {
 			lcd_print_char('W');
 		} else {
