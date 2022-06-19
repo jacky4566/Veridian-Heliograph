@@ -192,12 +192,9 @@ void lcd_setRotation(uint8_t newRot) {
 }
 
 void lcd_clear(void) {
-<<<<<<< Updated upstream
-=======
 	if (lcd_state = LCD_OFF) {
 		return;
 	}
->>>>>>> Stashed changes
 	uint8_t clearBuffer[] = { MLCD_CM, MLCD_TR };
 	lcd_state = LCD_SENDING_CLR;
 	HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_SET);
