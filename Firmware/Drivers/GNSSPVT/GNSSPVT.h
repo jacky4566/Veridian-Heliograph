@@ -20,7 +20,7 @@ typedef enum {
 	GNSS_UINT, GNSS_STOP, GNSS_ON
 } GNSS_rate;
 
-extern volatile uint32_t GNSSlastPacket;
+extern volatile uint32_t GNSSlastPacketAge;
 extern volatile bool GNSSAlive;
 extern volatile bool GNSSNewData;
 extern GNSS_rate GNSSlastRate;

@@ -26,7 +26,7 @@ const uint8_t UBX_PAYLOAD_OFFSET_ = 4;
 const uint8_t UBX_NAV_CLASS_ = 0x01;
 const uint8_t UBX_NAV_PVT = 0x07;
 const uint8_t UBX_PVT_LEN_ = 92;
-volatile uint32_t GNSSlastPacket;
+volatile uint32_t GNSSlastPacketAge;
 volatile bool GNSSAlive;
 volatile bool GNSSNewData = true;
 volatile uint16_t parser_pos_ = 0;
@@ -162,9 +162,6 @@ void GNSS_Prep_Stop() {
 		parse(LL_LPUART_ReceiveData8(LPUART1));
 	}
 	LL_LPUART_ClearFlag_ORE(LPUART1);
-	/* Make sure that no LPUART transfer is on-going */
-	while (LL_LPUART_IsActiveFlag_BUSY(LPUART1) == 1) {
-	}
 	/* Make sure that LPUART is ready to receive */
 	while (LL_LPUART_IsActiveFlag_REACK(LPUART1) == 0) {
 	}
@@ -187,7 +184,7 @@ void GNSS_Power() {
 		}
 		break;
 	case GNSS_ON:
-		if ((superCapmV < (mV_GNSS_ON - 50)) && (getFixType() >= FIX_3D)) {
+		if ((superCapmV < (mV_GNSS_ON - 50)) && (getFixType() >= FIX_3D) && (GNSSlastPacketAge < 2)) {
 			//We have a fix, save power
 			GNSS_Set_Power(GNSS_STOP);
 		}
@@ -216,8 +213,7 @@ static void GNSS_Set_Power(GNSS_rate newRate) {
 		//should never need this
 	case GNSS_ON:
 		//Run
-		LPUART_Transmit((uint8_t*) &UBX_CFG_PWR_RUN, sizeof(UBX_CFG_PWR_RUN), HAL_MAX_DELAY);
-		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_SET);
+		GNSS_Config();
 		GNSSlastRate = GNSS_ON;
 		break;
 	}
@@ -312,7 +308,7 @@ void parse(uint8_t byte_read) {
 		if (computed_checksum == received_checksum) {
 			if (pvt_buffer_[20 + UBX_PAYLOAD_OFFSET_] >= FIX_2D) {
 				memcpy(&ubx_nav_pvt, pvt_buffer_ + UBX_PAYLOAD_OFFSET_, UBX_PVT_LEN_);
-				GNSSlastPacket = 0;
+				GNSSlastPacketAge = 0;
 				if (isTimeFullyResolved()) {
 					setTimeGNSS();
 				}

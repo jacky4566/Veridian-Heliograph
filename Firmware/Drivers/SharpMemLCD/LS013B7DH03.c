@@ -53,13 +53,15 @@ lcd_State_enum LCD_Power() {
 			//Turn on LCD
 			lcd_state = LCD_READY;
 			//HAL_LPTIM_PWM_Start(&hlptim1, 2047, 1023); //32768 DIV16 DIV2048 1HZ
-			HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_SET); //Enable display
+			HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_SET);
 		}
 		break;
 	case LCD_TIMER:
 		if (superCapmV < mV_LCD_OFF) {
 			lcd_state = LCD_OFF;
 			HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_RESET);
+		} else if (superCapmV > mV_OV) {
+			lcd_state = LCD_READY;
 		} else if ((superCapmV > mV_LCD_FAST) && (guiTimer >= LCD_RATE_FAST)) {
 			lcd_state = LCD_READY;
 		} else if (guiTimer >= LCD_RATE_SLOW) {
@@ -190,6 +192,12 @@ void lcd_setRotation(uint8_t newRot) {
 }
 
 void lcd_clear(void) {
+<<<<<<< Updated upstream
+=======
+	if (lcd_state = LCD_OFF) {
+		return;
+	}
+>>>>>>> Stashed changes
 	uint8_t clearBuffer[] = { MLCD_CM, MLCD_TR };
 	lcd_state = LCD_SENDING_CLR;
 	HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_SET);

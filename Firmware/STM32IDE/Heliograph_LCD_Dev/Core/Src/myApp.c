@@ -71,7 +71,7 @@ void myApp_init() {
 	//GNSS
 	GNSS_Init();
 
-	while(ADCrunning){
+	while (ADCrunning) {
 		//wait for ADC
 	}
 
@@ -126,12 +126,12 @@ static void drawHeader() {
 	lcd_print(npf_snprintf(strbuffer, strbufferSize, "%3.2fV", (float) superCapmV / 1000.0f));
 //GNSS Age
 	lcd_SetCursor(2, 30);
-	if (GNSSlastPacket < 60) {
-		lcd_print(npf_snprintf(strbuffer, strbufferSize, "AGE:%lus", GNSSlastPacket));
-	} else if (GNSSlastPacket < 3600) {
-		lcd_print(npf_snprintf(strbuffer, strbufferSize, "AGE:%lum", GNSSlastPacket / 60));
+	if (GNSSlastPacketAge < 60) {
+		lcd_print(npf_snprintf(strbuffer, strbufferSize, "AGE:%lus", GNSSlastPacketAge));
+	} else if (GNSSlastPacketAge < 3600) {
+		lcd_print(npf_snprintf(strbuffer, strbufferSize, "AGE:%.1fm", (float) GNSSlastPacketAge / 60.0f));
 	} else {
-		lcd_print(npf_snprintf(strbuffer, strbufferSize, "AGE:%luh", GNSSlastPacket / 3600));
+		lcd_print(npf_snprintf(strbuffer, strbufferSize, "AGE:%.1fh", (float) GNSSlastPacketAge / 3600.0f));
 	}
 //Temp
 	lcd_SetCursor(94, 30);
@@ -199,7 +199,6 @@ static void startADC() {
 		//ADC already running
 		return;
 	}
-
 	SET_BIT(SYSCFG->CFGR3, SYSCFG_CFGR3_ENBUF_SENSOR_ADC); //enable Temp sensor, 10uS wakeup
 	ADCrunning = true;
 	HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED);
@@ -225,7 +224,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc) {
 	guiTimer++;
-	GNSSlastPacket++;
+	GNSSlastPacketAge++;
 }
 
 bool vBATOK() {
