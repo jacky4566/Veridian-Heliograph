@@ -190,9 +190,6 @@ void lcd_setRotation(uint8_t newRot) {
 }
 
 void lcd_clear(void) {
-	if (lcd_state = LCD_OFF){
-		return;
-	}
 	uint8_t clearBuffer[] = { MLCD_CM, MLCD_TR };
 	lcd_state = LCD_SENDING_CLR;
 	HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_SET);
@@ -244,7 +241,7 @@ static void lcd_DoTX() {
 				LCD_BUFFER[linePointer][LCD_RES_PX_X_b - 1] = 0x01; //Line Sent
 				return;
 			}
-			if (linePointer++ > LCD_RES_PX_Y) {
+			if (++linePointer >= LCD_RES_PX_Y) {
 				linePointer = 0;
 			}
 		}
