@@ -31,3 +31,4 @@ google-services.json
 
 #STM32 studio debug files
 Debug/
+Firmware/STM32IDE/.metadata/
