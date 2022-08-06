@@ -200,17 +200,14 @@ static void GNSS_Set_Power(GNSS_rate newRate) {
 		return;
 	}
 	switch (newRate) {
+	case GNSS_UINT:
+		GNSS_Config();
+		//Fall through
 	case GNSS_STOP:
-		if (GNSSlastRate == GNSS_UINT) {
-			//Run this one time
-			GNSS_Config();
-		}
 		GNSSAlive = false;
 		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_RESET);
 		GNSSlastRate = GNSS_STOP;
 		break;
-	case GNSS_UINT:
-		//should never need this
 	case GNSS_ON:
 		//Run
 		GNSS_Config();
@@ -222,10 +219,10 @@ static void GNSS_Set_Power(GNSS_rate newRate) {
 void GNSS_Config() {
 	//Wakeup
 	HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_SET);
+	LPUART_Transmit((uint8_t*) 0xff, 1, HAL_MAX_DELAY);
+	HAL_Delay(1);
 	//Run
 	LPUART_Transmit((uint8_t*) &UBX_CFG_PWR_RUN, sizeof(UBX_CFG_PWR_RUN), HAL_MAX_DELAY);
-	//Enable PVT message
-	LPUART_Transmit((uint8_t*) &UBX_NAV_PVT_ON, sizeof(UBX_NAV_PVT_ON), HAL_MAX_DELAY);
 	//Turn off a bunch of stuff
 	LPUART_Transmit((uint8_t*) &UBX_NAV_GGA_OFF, sizeof(UBX_NAV_GGA_OFF), HAL_MAX_DELAY);
 	LPUART_Transmit((uint8_t*) &UBX_NAV_GLL_OFF, sizeof(UBX_NAV_GLL_OFF), HAL_MAX_DELAY);
@@ -234,6 +231,8 @@ void GNSS_Config() {
 	LPUART_Transmit((uint8_t*) &UBX_NAV_GSV_OFF, sizeof(UBX_NAV_GSV_OFF), HAL_MAX_DELAY);
 	LPUART_Transmit((uint8_t*) &UBX_NAV_RMC_OFF, sizeof(UBX_NAV_RMC_OFF), HAL_MAX_DELAY);
 	LPUART_Transmit((uint8_t*) &UBX_NAV_VTG_OFF, sizeof(UBX_NAV_VTG_OFF), HAL_MAX_DELAY);
+	//Enable PVT message
+	LPUART_Transmit((uint8_t*) &UBX_NAV_PVT_ON, sizeof(UBX_NAV_PVT_ON), HAL_MAX_DELAY);
 	//Enable EXINT Backup
 	LPUART_Transmit((uint8_t*) &UBX_CFG_PM2, sizeof(UBX_CFG_PM2), HAL_MAX_DELAY);
 	//Save
@@ -345,6 +344,5 @@ static void LPUART_Transmit(uint8_t *pData, uint16_t Size, uint32_t Timeout) {
 	/* Wait for TC flag to be raised for last char */
 	while (!LL_LPUART_IsActiveFlag_TC(LPUART1)) {
 	}
-	HAL_Delay(1);
 }
 

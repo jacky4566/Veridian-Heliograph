@@ -126,7 +126,7 @@ static void drawHeader() {
 	lcd_print(npf_snprintf(strbuffer, strbufferSize, "%3.2fV", (float) superCapmV / 1000.0f));
 //GNSS Age
 	lcd_SetCursor(2, 30);
-	if (GNSSlastPacketAge < 60) {
+	if (GNSSlastPacketAge < 90) {
 		lcd_print(npf_snprintf(strbuffer, strbufferSize, "AGE:%lus", GNSSlastPacketAge));
 	} else if (GNSSlastPacketAge < 3600) {
 		lcd_print(npf_snprintf(strbuffer, strbufferSize, "AGE:%.1fm", (float) GNSSlastPacketAge / 60.0f));
