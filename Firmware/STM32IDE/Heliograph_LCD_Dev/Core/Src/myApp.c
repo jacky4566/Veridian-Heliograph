@@ -32,7 +32,7 @@ extern IWDG_HandleTypeDef hiwdg;
 //internal Functions
 static void goToIdle();
 static void goToSleep();
-static void printTime();
+static void printDateTime();
 static void drawHeader();
 static void drawGNSS();
 static void startADC();
@@ -58,6 +58,8 @@ wakeUpSource lastWakeUpSource;
 void myApp_init() {
 	HAL_IWDG_Refresh(&hiwdg); //Kick watchdog
 	HAL_ADCEx_EnableVREFINT();
+	SET_BIT(SYSCFG->CFGR3, SYSCFG_CFGR3_ENBUF_SENSOR_ADC); //enable Temp sensor, 10uS wakeup
+
 	startADC();
 
 	//Power Stuff
@@ -90,10 +92,9 @@ void myApp_loop() {
 		while ((lcd_draw() == LCD_SENDING_DATA)) {
 			goToIdle(); //wait for DMA services to finish
 		}
-	} else { //Wait for ADC to finish
-		while (ADCrunning) {
-			goToIdle(); //wait for ADC services to finish
-		}
+	}
+	while (ADCrunning) {
+		goToIdle(); //wait for ADC services to finish
 	}
 	goToSleep();
 }
@@ -103,38 +104,28 @@ static void goToIdle() {
 }
 
 static void goToSleep() {
-	GNSS_Prep_Stop();
-	HAL_SuspendTick();
-	do {
-		lastWakeUpSource = WKUP_CLEAR;
-		HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
-		__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
-	} while (lastWakeUpSource == WKUP_LPUART);
-	LL_LPUART_DisableIT_WKUP(LPUART1);
-	HAL_ResumeTick();
+	if (superCapmV < mV_OV) {
+		GNSS_Prep_Stop();
+		HAL_SuspendTick();
+		do {
+			lastWakeUpSource = WKUP_CLEAR;
+			HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+			__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+		} while (lastWakeUpSource == WKUP_LPUART);
+		LL_LPUART_DisableIT_WKUP(LPUART1);
+		HAL_ResumeTick();
+	}
 }
 
 static void drawHeader() {
-	lcd_clearLines(0, 33);
-//Base Line
-	lcd_drawLine(0, 33, 127, 33, LCD_BLACK);
-//Time
-	lcd_SetCursor(1, 14);
-	printTime();
+	lcd_clearLines(0, LCD_row_Height * 2);
+//Date Time
+	printDateTime();
 //Battery
-	lcd_SetCursor(80, 14);
+	lcd_SetCursor(80, LCD_row_Height - 2);
 	lcd_print(npf_snprintf(strbuffer, strbufferSize, "%3.2fV", (float) superCapmV / 1000.0f));
-//GNSS Age
-	lcd_SetCursor(2, 30);
-	if (GNSSlastPacketAge < 90) {
-		lcd_print(npf_snprintf(strbuffer, strbufferSize, "AGE:%lus", GNSSlastPacketAge));
-	} else if (GNSSlastPacketAge < 3600) {
-		lcd_print(npf_snprintf(strbuffer, strbufferSize, "AGE:%.1fm", (float) GNSSlastPacketAge / 60.0f));
-	} else {
-		lcd_print(npf_snprintf(strbuffer, strbufferSize, "AGE:%.1fh", (float) GNSSlastPacketAge / 3600.0f));
-	}
 //Temp
-	lcd_SetCursor(94, 30);
+	lcd_SetCursor(94, (LCD_row_Height * 2) - 2);
 	lcd_print(npf_snprintf(strbuffer, strbufferSize, "%.2dC", (int) tempC));
 	//GNSS Status
 	if (GNSSlastRate == GNSS_ON) {
@@ -143,19 +134,32 @@ static void drawHeader() {
 	if (GNSSAlive) {
 		lcd_drawLine(0, 16, 0, 32, LCD_BLACK);
 	}
+//Div line
+	lcd_drawLine(0, LCD_row_Height * 2, 127, LCD_row_Height * 2, LCD_BLACK);
+}
+
+static void printDateTime() {
+	RTC_TimeTypeDef sTime;
+	RTC_DateTypeDef sDate;
+	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+	lcd_SetCursor(1, LCD_row_Height - 2);
+	lcd_print(npf_snprintf(strbuffer, strbufferSize, "%02d:%02d:%02d ", sTime.Hours, sTime.Minutes, sTime.Seconds));
+	lcd_SetCursor(1, (LCD_row_Height * 2) - 2);
+	lcd_print(npf_snprintf(strbuffer, strbufferSize, "%02d/%02d/%02d", sDate.Date, sDate.Month, sDate.Year));
 }
 
 static void drawGNSS() {
 	if (GNSSNewData) {
-		lcd_clearLines(34, 97);
-		lcd_SetCursor(1, 48);
+		lcd_clearLines((LCD_row_Height * 2) + 2, LCD_row_Height * 6);
+		lcd_SetCursor(1, LCD_row_Height * 3);
 		lcd_print(npf_snprintf(strbuffer, strbufferSize, "%8.4f ", fabsf(getLat())));
 		if (getLat() < 0) {
 			lcd_print_char('S');
 		} else {
 			lcd_print_char('N');
 		}
-		lcd_SetCursor(1, 64);
+		lcd_SetCursor(1, LCD_row_Height * 4);
 		lcd_print(npf_snprintf(strbuffer, strbufferSize, "%8.4f ", fabsf(getLong())));
 		if (getLong() < 0) {
 			lcd_print_char('W');
@@ -163,12 +167,23 @@ static void drawGNSS() {
 			lcd_print_char('E');
 		}
 
-		lcd_SetCursor(1, 80);
-		lcd_print(npf_snprintf(strbuffer, strbufferSize, "Sat:%d Fix:%d", getNumSatellites(), getFixType()));
+		lcd_SetCursor(1, LCD_row_Height * 5);
+		lcd_print(npf_snprintf(strbuffer, strbufferSize, "Sat:%d Acc:%2.0fm", getNumSatellites(), getHAcc() > 99.9 ? 99.9 : getHAcc()));
 
-		lcd_SetCursor(1, 96);
+		lcd_SetCursor(1, LCD_row_Height * 6);
 		lcd_print(npf_snprintf(strbuffer, strbufferSize, "%dkph HD:%d", getGroundSpeed_kph(), getMotionHeading_deg()));
 		GNSSNewData = false;
+	}
+
+	//GNSS Age
+	lcd_clearLines((LCD_row_Height * 6) + 2, LCD_row_Height * 7);
+	lcd_SetCursor(2, LCD_row_Height * 7);
+	if (GNSSlastPacketAge < 90) {
+		lcd_print(npf_snprintf(strbuffer, strbufferSize, "Age:%lus", GNSSlastPacketAge));
+	} else if (GNSSlastPacketAge < 3600) {
+		lcd_print(npf_snprintf(strbuffer, strbufferSize, "Age:%.1fm", (float) GNSSlastPacketAge / 60.0f));
+	} else {
+		lcd_print(npf_snprintf(strbuffer, strbufferSize, "Age:%.1fh", (float) GNSSlastPacketAge / 3600.0f));
 	}
 }
 
@@ -178,20 +193,13 @@ void setTimeGNSS() {
 	sTime.Hours = GNSS_getHour();
 	sTime.Minutes = GNSS_getMin();
 	sTime.Seconds = GNSS_getSec();
-	sDate.Year = GNSS_getYear() - 2000;
+	sDate.Year = (uint8_t) (GNSS_getYear() - (uint16_t) 2000);
 	sDate.Month = GNSS_getMonth();
 	sDate.Date = GNSS_getDay();
+	sDate.WeekDay = 0;
 
 	HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
 	HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-}
-
-static void printTime() {
-	RTC_TimeTypeDef sTime;
-	RTC_DateTypeDef sDate;
-	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-	lcd_print(npf_snprintf(strbuffer, strbufferSize, "%02d:%02d:%02d ", sTime.Hours, sTime.Minutes, sTime.Seconds));
 }
 
 static void startADC() {
@@ -199,7 +207,7 @@ static void startADC() {
 		//ADC already running
 		return;
 	}
-	SET_BIT(SYSCFG->CFGR3, SYSCFG_CFGR3_ENBUF_SENSOR_ADC); //enable Temp sensor, 10uS wakeup
+
 	ADCrunning = true;
 	HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED);
 	HAL_ADC_Start_DMA(&hadc, (uint32_t*) &ADC_raw, adc_Channels);
@@ -217,7 +225,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	tempC = tempC + 30;
 
 	HAL_ADC_Stop_DMA(hadc);
-	CLEAR_BIT(SYSCFG->CFGR3, SYSCFG_CFGR3_ENBUF_SENSOR_ADC); //disable Temp sensor
+	//CLEAR_BIT(SYSCFG->CFGR3, SYSCFG_CFGR3_ENBUF_SENSOR_ADC); //disable Temp sensor
 
 	ADCrunning = false;
 }

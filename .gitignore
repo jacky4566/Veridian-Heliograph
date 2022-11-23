@@ -32,3 +32,4 @@ google-services.json
 #STM32 studio debug files
 Firmware/STM32IDE/.metadata/*
 Firmware/STM32IDE/Heliograph_LCD_Dev/Debug/**
+Firmware/STM32IDE/.metadata/.plugins/*

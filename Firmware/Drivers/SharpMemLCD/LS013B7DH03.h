@@ -17,7 +17,8 @@
 #define LCD_RES_PX_X (128)
 #define LCD_RES_PX_X_b ((LCD_RES_PX_X / 8) + 2)
 #define LCD_RES_PX_Y (128)
-#define strbufferSize 20
+#define strbufferSize (20)
+#define LCD_row_Height (17)
 
 typedef enum  {
 	LCD_OFF, 			//Disabled

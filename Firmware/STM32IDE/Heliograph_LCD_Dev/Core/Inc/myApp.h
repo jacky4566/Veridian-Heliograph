@@ -17,9 +17,9 @@ extern volatile uint32_t guiTimer;
 
 #define LCD_RATE_FAST  (1)
 #define LCD_RATE_SLOW  (15)
-#define mV_OV		   ((int16_t) 3550 )
-#define mV_GNSS_ON     ((int16_t) 3450 )
-#define mV_GNSS_OFF    ((int16_t) 2800 )
+#define mV_OV		   ((int16_t) 3500 )
+#define mV_GNSS_ON     ((int16_t) 3400 )
+#define mV_GNSS_OFF    ((int16_t) 3000 )
 #define mV_LCD_OFF     ((int16_t) 2500 )
 #define mV_LCD_SLOW    ((int16_t) 2750 )
 #define mV_LCD_FAST    ((int16_t) 3000 )

@@ -17,7 +17,7 @@
 #define timeFullyResolved 0x04
 
 //Power State
-GNSS_rate GNSSlastRate = GNSS_UINT;
+volatile enum GNSS_rate GNSSlastRate = GNSS_UINT;
 
 //Parsing stuff
 const uint8_t UBX_HEADER_[2] = { 0xB5, 0x62 };
@@ -72,9 +72,10 @@ struct {
 
 //Private functions
 void parse(uint8_t byte_read);
+void GNSS_Sleep();
 void GNSS_Config();
 uint16_t Checksum(uint8_t *data, uint16_t len);
-static void GNSS_Set_Power(GNSS_rate);
+static void GNSS_Set_Power(enum GNSS_rate);
 static void LPUART_Transmit(uint8_t *pData, uint16_t Size, uint32_t Timeout);
 
 //Functions
@@ -107,17 +108,8 @@ float getLong() {
 	return ((float) ubx_nav_pvt.lon_deg) * 1e-7;
 }
 
-int getElevation_M() {
-	return ubx_nav_pvt.hmsl / 1000;
-}
-
-uint8_t getHAcc() {
-	uint32_t returnAcc = ubx_nav_pvt.hacc / 1000; // m
-	if (returnAcc > 255) {
-		return (uint8_t) 0xff;
-	} else {
-		return (uint8_t) returnAcc;
-	}
+float getHAcc() {
+	return (float)ubx_nav_pvt.hacc * 1e-3;
 }
 
 uint8_t getGroundSpeed_kph() {
@@ -136,8 +128,8 @@ uint8_t getNumSatellites() {
 	return ubx_nav_pvt.numsv;
 }
 
-GNSS_FixType getFixType() {
-	return (GNSS_FixType) ubx_nav_pvt.fix;
+enum GNSS_FixType getFixType() {
+	return (enum GNSS_FixType) ubx_nav_pvt.fix;
 }
 
 bool isGnssFixOk() {
@@ -155,6 +147,9 @@ void GNSS_Init() {
 //Enable Interrupts
 	LL_LPUART_EnableIT_RXNE(LPUART1);
 	LL_LPUART_SetWKUPType(LPUART1, LL_LPUART_WAKEUP_ON_RXNE); //Set the wake-up event type : specify wake-up on RXNE flag
+	GNSS_Config();
+	GNSSAlive = false;
+	GNSS_Sleep();
 }
 
 void GNSS_Prep_Stop() {
@@ -173,10 +168,7 @@ void GNSS_Prep_Stop() {
 void GNSS_Power() {
 	switch (GNSSlastRate) {
 	case GNSS_UINT:
-		if (superCapmV > mV_GNSS_OFF) {
-			//Don't power up GNSS until we have sufficient voltage
-			GNSS_Set_Power(GNSS_STOP);
-		}
+		GNSS_Set_Power(GNSS_STOP);
 		break;
 	case GNSS_STOP:
 		if (superCapmV > mV_GNSS_ON) {
@@ -184,7 +176,7 @@ void GNSS_Power() {
 		}
 		break;
 	case GNSS_ON:
-		if ((superCapmV < (mV_GNSS_ON - 50)) && (getFixType() >= FIX_3D) && (GNSSlastPacketAge < 2)) {
+		if ((superCapmV < (mV_GNSS_ON - 150)) && (getFixType() >= FIX_3D) && (GNSSlastPacketAge < 2)) {
 			//We have a fix, save power
 			GNSS_Set_Power(GNSS_STOP);
 		}
@@ -195,24 +187,19 @@ void GNSS_Power() {
 	}
 }
 
-static void GNSS_Set_Power(GNSS_rate newRate) {
+static void GNSS_Set_Power(enum GNSS_rate newRate) {
 	if (newRate == GNSSlastRate) {
 		return;
 	}
-	switch (newRate) {
-	case GNSS_UINT:
-		GNSS_Config();
-		//Fall through
-	case GNSS_STOP:
-		GNSSAlive = false;
-		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_RESET);
-		GNSSlastRate = GNSS_STOP;
-		break;
-	case GNSS_ON:
+	if (newRate == GNSS_ON) {
 		//Run
 		GNSS_Config();
 		GNSSlastRate = GNSS_ON;
-		break;
+	} else {
+		//Assume GNSS_STOP
+		GNSSAlive = false;
+		GNSS_Sleep();
+		GNSSlastRate = GNSS_STOP;
 	}
 }
 
@@ -220,7 +207,7 @@ void GNSS_Config() {
 	//Wakeup
 	HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_SET);
 	LPUART_Transmit((uint8_t*) 0xff, 1, HAL_MAX_DELAY);
-	HAL_Delay(1);
+
 	//Run
 	LPUART_Transmit((uint8_t*) &UBX_CFG_PWR_RUN, sizeof(UBX_CFG_PWR_RUN), HAL_MAX_DELAY);
 	//Turn off a bunch of stuff
@@ -237,6 +224,11 @@ void GNSS_Config() {
 	LPUART_Transmit((uint8_t*) &UBX_CFG_PM2, sizeof(UBX_CFG_PM2), HAL_MAX_DELAY);
 	//Save
 	LPUART_Transmit((uint8_t*) &UBX_CFG_CFG, sizeof(UBX_CFG_CFG), HAL_MAX_DELAY);
+}
+
+void GNSS_Sleep() {
+	LPUART_Transmit((uint8_t*) &UBX_CFG_PWR_STNBY, sizeof(UBX_CFG_PWR_STNBY), HAL_MAX_DELAY);
+	HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_RESET);
 }
 
 //Parsing
