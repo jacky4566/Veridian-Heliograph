@@ -1,4 +1,4 @@
-122486406754711
+128645227710850
 Diode_SMD
 D_0201_0603Metric
 Diode SMD 0201 (0603 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: https://www.vishay.com/docs/20052/crcw0201e3.pdf), generated with kicad-footprint-generator
@@ -199,6 +199,20 @@ Diode_SMD
 D_MicroMELF_Handsoldering
 Diode, MicroMELF, Hand Soldering, http://www.vishay.com/docs/85597/bzm55.pdf
 MicroMELF Diode
+0
+2
+2
+Diode_SMD
+D_MicroSMP_AK
+Diode MicroSMP (DO-219AD), large-pad cathode, https://www.vishay.com/docs/89020/mss1p3l.pdf
+Diode MicroSMP (DO-219AD)
+0
+2
+2
+Diode_SMD
+D_MicroSMP_KA
+Diode MicroSMP (DO-219AD), large-pad anode, https://www.vishay.com/docs/89457/msmp6a.pdf
+Diode MicroSMP (DO-219AD)
 0
 2
 2
@@ -514,6 +528,13 @@ Diode_SMD
 Nexperia_CFP3_SOD-123W
 Nexperia CFP3 (SOD-123W), https://assets.nexperia.com/documents/outline-drawing/SOD123W.pdf
 CFP3 SOD-123W
+0
+2
+2
+Diode_SMD
+Nexperia_DSN0603-2_0.6x0.3mm_P0.4mm
+SOD962-2 silicon, leadless ultra small package; 2 terminals; 0.4 mm pitch; 0.6 mm x 0.3 mm x 0.3 mm body (https://assets.nexperia.com/documents/package-information/SOD962-2.pdf https://www.nexperia.com/packages/SOD962-2.html)
+TVS protection diodes
 0
 2
 2
