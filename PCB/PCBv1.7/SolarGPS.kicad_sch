@@ -2411,7 +2411,7 @@
     (effects (font (size 5.0038 5.0038) (thickness 1.0008) bold) (justify left bottom))
     (uuid b09666f9-12f1-4ee9-8877-2292c94258ca)
   )
-  (text "VOUT = 3.01" (at 125.095 167.513 0)
+  (text "VOUT = 3.0" (at 125.095 167.513 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid ce90ec57-6b03-456b-816b-0a61fc542005)
   )
@@ -3211,7 +3211,7 @@
     (in_bom yes) (on_board yes)
     (uuid 3ca7f24b-5230-4198-9368-e2eee124f640)
     (property "Reference" "R12" (id 0) (at 43.18 134.62 90))
-    (property "Value" "86k" (id 1) (at 45.085 134.62 90))
+    (property "Value" "86.6k" (id 1) (at 45.085 134.62 90))
     (property "Footprint" "Resistor_SMD:R_0603_1608Metric" (id 2) (at 46.99 134.62 0)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -3406,7 +3406,7 @@
     (in_bom yes) (on_board yes)
     (uuid 66ab1b6c-c0f7-4e17-aa5a-633f1b282017)
     (property "Reference" "R4" (id 0) (at 44.45 156.21 90))
-    (property "Value" "86k" (id 1) (at 46.355 156.21 90))
+    (property "Value" "86.6k" (id 1) (at 46.355 156.21 90))
     (property "Footprint" "Resistor_SMD:R_0603_1608Metric" (id 2) (at 48.26 156.21 0)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -3653,7 +3653,7 @@
     (in_bom yes) (on_board yes)
     (uuid 8c70be32-1219-4d69-a829-74b183f2f44f)
     (property "Reference" "R7" (id 0) (at 118.11 180.975 0))
-    (property "Value" "86k" (id 1) (at 118.745 179.07 0))
+    (property "Value" "86.6k" (id 1) (at 118.745 179.07 0))
     (property "Footprint" "Resistor_SMD:R_0603_1608Metric" (id 2) (at 122.555 180.34 0)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -3952,7 +3952,7 @@
     (in_bom yes) (on_board yes)
     (uuid c1d4681b-f4ba-405d-9632-bf584a81375a)
     (property "Reference" "R1" (id 0) (at 287.02 46.355 90))
-    (property "Value" "86k" (id 1) (at 287.02 48.26 90))
+    (property "Value" "86.6k" (id 1) (at 287.02 48.26 90))
     (property "Footprint" "Resistor_SMD:R_0603_1608Metric" (id 2) (at 287.02 48.26 0)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -4461,7 +4461,7 @@
       (reference "L1") (unit 1) (value "0.47uH") (footprint "Inductor_SMD:L_0805_2012Metric_Pad1.15x1.40mm_HandSolder")
     )
     (path "/c1d4681b-f4ba-405d-9632-bf584a81375a"
-      (reference "R1") (unit 1) (value "86k") (footprint "Resistor_SMD:R_0603_1608Metric")
+      (reference "R1") (unit 1) (value "86.6k") (footprint "Resistor_SMD:R_0603_1608Metric")
     )
     (path "/08f15c76-b017-4c6c-91c0-1c3f0ff60f39"
       (reference "R2") (unit 1) (value "432k") (footprint "Resistor_SMD:R_0603_1608Metric")
@@ -4470,13 +4470,13 @@
       (reference "R3") (unit 1) (value "432k") (footprint "Resistor_SMD:R_0603_1608Metric")
     )
     (path "/66ab1b6c-c0f7-4e17-aa5a-633f1b282017"
-      (reference "R4") (unit 1) (value "86k") (footprint "Resistor_SMD:R_0603_1608Metric")
+      (reference "R4") (unit 1) (value "86.6k") (footprint "Resistor_SMD:R_0603_1608Metric")
     )
     (path "/b7fb5cdf-ae9c-4fee-86cd-85cb4152df62"
       (reference "R6") (unit 1) (value "432k") (footprint "Resistor_SMD:R_0603_1608Metric")
     )
     (path "/8c70be32-1219-4d69-a829-74b183f2f44f"
-      (reference "R7") (unit 1) (value "86k") (footprint "Resistor_SMD:R_0603_1608Metric")
+      (reference "R7") (unit 1) (value "86.6k") (footprint "Resistor_SMD:R_0603_1608Metric")
     )
     (path "/bd46e7cc-b93d-421d-a647-5afb3f41c47c"
       (reference "R8") (unit 1) (value "5.1K") (footprint "Resistor_SMD:R_0603_1608Metric")
@@ -4491,7 +4491,7 @@
       (reference "R11") (unit 1) (value "5.1K") (footprint "Resistor_SMD:R_0603_1608Metric")
     )
     (path "/3ca7f24b-5230-4198-9368-e2eee124f640"
-      (reference "R12") (unit 1) (value "86k") (footprint "Resistor_SMD:R_0603_1608Metric")
+      (reference "R12") (unit 1) (value "86.6k") (footprint "Resistor_SMD:R_0603_1608Metric")
     )
     (path "/53efff7a-a39b-49e0-a104-fa1d9eddbd94"
       (reference "R13") (unit 1) (value "5.1K") (footprint "Resistor_SMD:R_0603_1608Metric")
