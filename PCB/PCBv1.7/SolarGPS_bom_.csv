@@ -1,0 +1,40 @@
+Component,Description,Part,References,Value,Footprint,Quantity Per PCB,Datasheet,Manufacture,Category,DK_Datasheet_Link,DK_Detail_Page,Digi-Key_PN,Family,MPN,Manufacturer,Status
+1,"Unpolarized capacitor, small symbol",C_Small,C13 C15,11pF,C_0603_1608Metric,2,~,,,,,,,,,
+2,"Unpolarized capacitor, small symbol",C_Small,C1 C2 C3 C6 C7 C8 C12 C14 C16 C17,1uF,C_0603_1608Metric,10,~,,,,,,,,,
+3,"Unpolarized capacitor, small symbol",C_Small,C9 C10,22uF,C_1206_3216Metric,2,~,,,,,,,,,
+4,Polarized capacitor,C_Polarized,C4,70F,TPLC3R8-25MR8X20,1,~,,,,,,,,,
+5,"Light emitting diode, small symbol",LED_Small,D1,LED_Small,D_0805_2012Metric,1,~,,,,,,,,,
+6,"Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_01x04_Male,J8,Conn_01x04_Male,PinSocket_1x04_P2.54mm_Vertical,1,~,,,,,,,,,
+7,"Generic connector, single row, 01x10, script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_01x10_Female,J1,Conn_01x10_Female,LS013B7DH03,1,~,,,,,,,,,
+8,"Generic connector, double row, 02x03, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers), script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_02x03_Odd_Even,J6,Conn_02x03_Odd_Even,Tag-Connect_TC2030-IDC-NL_2x03_P1.27mm_Vertical,1,~,,,,,,,,,
+9,"Generic connector, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_01x01_Female,J2 J3 J4 J5,GND,PinHeader_1x01_P2.54mm_Vertical,4,~,,,,,,,,,
+10,"Generic screw terminal, single row, 01x01, script generated (kicad-library-utils/schlib/autogen/connector/)",Screw_Terminal_01x01,J7,Screw_Terminal_01x01,M4_RA_7792,1,~,Keystone Electronics,,,,,,,,
+11,USB 2.0-only Type-C Receptacle connector,USB_C_Receptacle_USB2.0,J9,USB_C_Receptacle_USB2.0,USB_TYPE_C_PCB,1,https://www.usb.org/sites/default/files/documents/usb_type-c.zip,,,,,,,,,
+12,"Inductor, small symbol",L_Small,L1,0.47uH,L_0805_2012Metric_Pad1.15x1.40mm_HandSolder,1,~,,,,,,,,,
+13,"Resistor, small symbol",R_Small,R10,10,R_0805_2012Metric,1,~,,,,,,,,,
+14,"Resistor, small symbol",R_Small,R8 R9 R11 R13,5.1K,R_0603_1608Metric,4,~,,,,,,,,,
+15,"Resistor, small symbol",R_Small,R1 R4 R7 R12,86.6k,R_0603_1608Metric,4,~,,,,,,,,,
+16,"Resistor, small symbol",R_Small,R2 R3 R6,432k,R_0603_1608Metric,3,~,,,,,,,,,
+17,IMU ACCEL/GYRO I2C/SPI 14LGA,BMI160,U4,BMI160,BMI160,1,https://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMI160-DS000.pdf,,"Sensors, Transducers",https://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMI160-DS000.pdf,/product-detail/en/bosch-sensortec/BMI160/828-1057-1-ND/6136308,828-1057-1-ND,Motion Sensors - IMUs (Inertial Measurement Units),BMI160,Bosch Sensortec,Active
+18,"Ideal Diode, Ultra-Low Voltage Drop, 1.5-5.5V, 1A, SOT-23-5",MAX40200AUK,U5 U6 U7,MAX40200AUK,SOT-23-5,3,https://datasheets.maximintegrated.com/en/ds/MAX40200.pdf,,,,,,,,,
+19,GPS ublox M8 variant,SAM-M8Q,U2,SAM-M10Q,ublox_SAM-M8Q,1,https://www.u-blox.com/sites/default/files/SAM-M8Q_DataSheet_%28UBX-16012619%29.pdf,,,,,,,,,
+20,"ARM Cortex-M4 MCU, 256KB flash, 64KB RAM, 80MHz, 1.71-3.6V, 26 GPIO, UFQFPN-32",STM32L432KCUx,U3,STM32L432KCUx,QFN-32-1EP_5x5mm_P0.5mm_EP3.45x3.45mm,1,http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/DM00257205.pdf,,,,,,,,,
+21,,TPS63802-VeridianDesigns,U1,TPS63802,VREG_TPS63802DLAR,1,,,,,,,,,,
+22,"Very low capacitance ESD protection diode, 2 data-line, SOT-23-6",USBLC6-2SC6,U8,USBLC6-2SC6,SOT-23-6,1,https://www.st.com/resource/en/datasheet/usblc6-2.pdf,,,,,,,,,
+23,Two pin crystal,Crystal,Y1,32.768,Crystal_SMD_3215-2Pin_3.2x1.5mm,1,~,,,,,,,,,
+
+
+
+
+
+Component Groups:,23
+Component Count:,47
+Fitted Components:,47
+Number of PCBs:,1
+Total components:,47
+Schematic Version:,
+Schematic Date:,
+PCB Variant:,default
+BoM Date:,27-Apr-23 3:35:01 PM
+Schematic Source:,SolarGPS.kicad_sch
+KiCad Version:,Eeschema (6.0.10)

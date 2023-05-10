@@ -13,6 +13,7 @@
 	<item key="org.eclipse.cdt.ui.codeformatter.line_wrapping_tab_page.preview_line_width" value="80"/>
 	<item key="LastUsedHeaderTemplate" value="Default C header template"/>
 	<item key="LastUsedSourceTemplate" value="Default C source template"/>
+	<item key="org.eclipse.cdt.utils.ui.controls.FileListControl" value="../Drivers/nanoprintf"/>
 	<section name="completion_proposal_size">
 		<item key="size.x" value="429"/>
 		<item key="size.y" value="251"/>
@@ -59,5 +60,14 @@
 		<item key="y" value="617"/>
 		<item key="width" value="432"/>
 		<item key="height" value="663"/>
+	</section>
+	<section name="NewClassWizardPage">
+	</section>
+	<section name="org.eclipse.cdt.ui.OPEN_ACTION_SELECTION_DIALOG_SECTION">
+		<item key="DIALOG_X_ORIGIN" value="769"/>
+		<item key="DIALOG_Y_ORIGIN" value="236"/>
+		<item key="DIALOG_WIDTH" value="398"/>
+		<item key="DIALOG_HEIGHT" value="438"/>
+		<item key="DIALOG_FONT_NAME" value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI"/>
 	</section>
 </section>
