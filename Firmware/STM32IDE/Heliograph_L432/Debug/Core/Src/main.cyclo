@@ -11,10 +11,10 @@ stm32l4xx_ll_bus.h:1111:22:LL_APB1_GRP2_EnableClock	1
 main.c:75:5:main	1
 main.c:125:6:SystemClock_Config	4
 main.c:180:13:MX_ADC1_Init	5
-main.c:258:13:MX_LPUART1_UART_Init	2
-main.c:324:13:MX_RTC_Init	3
-main.c:367:13:MX_SPI1_Init	2
-main.c:405:13:MX_DMA_Init	1
-main.c:426:13:MX_GPIO_Init	1
-main.c:485:6:HAL_Delay	3
-main.c:508:6:Error_Handler	1
+main.c:257:13:MX_LPUART1_UART_Init	2
+main.c:323:13:MX_RTC_Init	5
+main.c:394:13:MX_SPI1_Init	2
+main.c:432:13:MX_DMA_Init	1
+main.c:453:13:MX_GPIO_Init	1
+main.c:510:6:HAL_Delay	3
+main.c:533:6:Error_Handler	1

@@ -36,23 +36,20 @@ volatile lcd_State_enum lcd_state = LCD_OFF;
 
 //Internal Function declarations
 static void lcd_DoTX();
+static void lcd_clear(void); 			//Clear Display
 static bool lcd_hasData();
 static uint8_t lcd_writeChar(uint8_t x, uint8_t y, uint8_t c);
 
 //Functions
-void lcd_init() {
-	LCD_Power();
-	lcd_clear();
-}
-
 lcd_State_enum LCD_Power() {
 	switch (lcd_state) {
 	case LCD_OFF:
-		if (superCapmV > mV_LCD_SLOW) {
+		if (superCapmV >= mV_LCD_SLOW) {
 			//Turn on LCD
 			lcd_state = LCD_READY;
 			//HAL_LPTIM_PWM_Start(&hlptim1, 2047, 1023); //32768 DIV16 DIV2048 1HZ
 			HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_SET);
+			lcd_clear();
 		}
 		break;
 	case LCD_TIMER:
@@ -191,9 +188,6 @@ void lcd_setRotation(uint8_t newRot) {
 }
 
 void lcd_clear(void) {
-	if (lcd_state = LCD_OFF) {
-		return;
-	}
 	uint8_t clearBuffer[] = { MLCD_CM, MLCD_TR };
 	lcd_state = LCD_SENDING_CLR;
 	HAL_GPIO_WritePin(DISP_CS_GPIO_Port, DISP_CS_Pin, GPIO_PIN_SET);
@@ -214,6 +208,9 @@ void lcd_clear(void) {
 }
 
 lcd_State_enum lcd_draw(void) {
+	if (lcd_state == LCD_OFF) {
+		return lcd_state;
+	}
 	if (lcd_state == LCD_READY && lcd_hasData()) {
 		//start new transfer
 		lcd_state = LCD_SENDING_DATA;

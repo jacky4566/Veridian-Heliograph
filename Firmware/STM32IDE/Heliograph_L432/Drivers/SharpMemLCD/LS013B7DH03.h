@@ -32,8 +32,6 @@ extern char strbuffer[];
 extern uint8_t LCDnextUpdatePeriod;
 
 //Functions
-void lcd_init(void);			//Start LCD
-void lcd_clear(void); 			//Clear Display
 lcd_State_enum LCD_Power(); 	//Controls power state
 lcd_State_enum lcd_draw(void); 	//Draws lines, Call until return done
 

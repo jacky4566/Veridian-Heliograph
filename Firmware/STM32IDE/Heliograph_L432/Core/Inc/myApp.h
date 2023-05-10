@@ -17,12 +17,12 @@ extern volatile uint32_t guiTimer;
 
 #define LCD_RATE_FAST  (1)
 #define LCD_RATE_SLOW  (15)
-#define mV_OV		   ((int16_t) 4000 )
-#define mV_GNSS_ON     ((int16_t) 3600 )
-#define mV_GNSS_OFF    ((int16_t) 3200 )
-#define mV_LCD_OFF     ((int16_t) 2900 )
-#define mV_LCD_SLOW    ((int16_t) 3200 )
-#define mV_LCD_FAST    ((int16_t) 3600 )
+#define mV_OV		   ((uint16_t) 4000 )
+#define mV_GNSS_ON     ((uint16_t) 3600 )
+#define mV_GNSS_OFF    ((uint16_t) 3200 )
+#define mV_LCD_OFF     ((uint16_t) 200 )
+#define mV_LCD_SLOW    ((uint16_t) 210 )
+#define mV_LCD_FAST    ((uint16_t) 3600 )
 
 typedef enum {
 	WKUP_CLEAR, WKUP_LPUART, WKUP_RTC, WKUP_EXTIO, WKUP_ADC

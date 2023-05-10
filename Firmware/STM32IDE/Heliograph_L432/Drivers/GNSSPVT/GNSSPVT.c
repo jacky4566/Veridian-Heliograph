@@ -140,18 +140,6 @@ bool isTimeFullyResolved() {
 	return ubx_nav_pvt.valid & timeFullyResolved;
 }
 
-void GNSS_Init() {
-	LL_LPUART_Enable(LPUART1);
-//Turn off
-	HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_RESET); //DISABLE GNSS
-//Enable Interrupts
-	LL_LPUART_EnableIT_RXNE(LPUART1);
-	LL_LPUART_SetWKUPType(LPUART1, LL_LPUART_WAKEUP_ON_RXNE); //Set the wake-up event type : specify wake-up on RXNE flag
-	GNSS_Config();
-	GNSSAlive = false;
-	GNSS_Sleep();
-}
-
 void GNSS_Prep_Stop() {
 	while (LL_LPUART_IsActiveFlag_RXNE(LPUART1)) { //Empty RX buffer
 		parse(LL_LPUART_ReceiveData8(LPUART1));
@@ -171,7 +159,7 @@ void GNSS_Power() {
 		GNSS_Set_Power(GNSS_STOP);
 		break;
 	case GNSS_STOP:
-		if (superCapmV > mV_GNSS_ON) {
+		if (superCapmV >= mV_GNSS_ON) {
 			GNSS_Set_Power(GNSS_ON);
 		}
 		break;

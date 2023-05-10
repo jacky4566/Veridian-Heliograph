@@ -57,21 +57,22 @@ void myApp_init() {
 	//HAL_PWREx_EnableUltraLowPower();
 	//HAL_PWREx_EnableFastWakeUp();
 
-	//GNSS
-	GNSS_Init();
+	/* Enable Power Clock */
+	__HAL_RCC_PWR_CLK_ENABLE();
+	/* Ensure that MSI is wake-up system clock */
+	__HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_MSI);
 
 	while (ADCrunning) {
 		//wait for ADC
 	}
 
 	//LCD
-	lcd_init();
 	lcd_SetFont((GFXfont*) &FreeSans9pt7bMod);
 }
 
 void myApp_loop() {
 	startADC();
-	GNSS_Power();
+	//GNSS_Power();
 	if (LCD_Power() == LCD_READY) {
 		drawHeader();
 		drawGNSS();
@@ -86,23 +87,23 @@ void myApp_loop() {
 }
 
 static void goToIdle() {
-	HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
+	HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
 }
 
 static void goToSleep() {
 	if (superCapmV < mV_OV) {
-		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_SET); //Allow charging
+		//HAL_GPIO_WritePin(SolarEN_GPIO_Port, SolarEN_Pin, GPIO_PIN_SET); //Allow charging
 		GNSS_Prep_Stop();
 		HAL_SuspendTick();
 		do {
 			lastWakeUpSource = WKUP_CLEAR;
-			HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+			HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFI);
 			__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
 		} while (lastWakeUpSource == WKUP_LPUART);
 		LL_LPUART_DisableIT_WKUP(LPUART1);
 		HAL_ResumeTick();
-	}else{
-		HAL_GPIO_WritePin(SolarEN_GPIO_Port, SolarEN_Pin, GPIO_PIN_RESET); //disable charging
+	} else {
+		//HAL_GPIO_WritePin(SolarEN_GPIO_Port, SolarEN_Pin, GPIO_PIN_RESET); //disable charging
 	}
 }
 
@@ -210,7 +211,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	//solarmV = ADC_raw[0];
 	superCapmV = ((uint32_t) ADC_raw[0] * vref * 2) / 4095UL;
 
-	//Temperature, Magic code from Datasheet
+	//Temperature
 	tempC = __HAL_ADC_CALC_TEMPERATURE(vref, ADC_raw[1], ADC_RESOLUTION_12B);
 
 	ADCrunning = false;
