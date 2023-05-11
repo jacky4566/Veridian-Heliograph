@@ -56,9 +56,7 @@ lcd_State_enum LCD_Power() {
 		if (superCapmV < mV_LCD_OFF) {
 			lcd_state = LCD_OFF;
 			HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_RESET);
-		} else if (superCapmV > mV_OV) {
-			lcd_state = LCD_READY;
-		} else if ((superCapmV > mV_LCD_FAST) && (guiTimer >= LCD_RATE_FAST)) {
+		} else if ((superCapmV >= mV_LCD_FAST) && (guiTimer >= LCD_RATE_FAST)) {
 			lcd_state = LCD_READY;
 		} else if (guiTimer >= LCD_RATE_SLOW) {
 			lcd_state = LCD_READY;
@@ -72,11 +70,7 @@ lcd_State_enum LCD_Power() {
 		break;
 	case LCD_SENDING_DATA:
 	case LCD_SENDING_CLR:
-		if (superCapmV < mV_LCD_OFF) {
-			HAL_SPI_DMAStop(&hspi1);
-			lcd_state = LCD_OFF;
-			HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_RESET);
-		}
+		break;
 	}
 	return lcd_state;
 }

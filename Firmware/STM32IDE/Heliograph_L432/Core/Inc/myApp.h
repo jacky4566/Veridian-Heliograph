@@ -9,20 +9,23 @@
 #define INC_MYAPP_H_
 
 #include <stdbool.h>
+#include <stdlib.h>
+#include <time.h>
+#include <math.h>
 
 //External Variables
 extern volatile uint32_t superCapmV;
-extern volatile int32_t tempC;
+extern volatile int tempC;
 extern volatile uint32_t guiTimer;
 
 #define LCD_RATE_FAST  (1)
 #define LCD_RATE_SLOW  (15)
 #define mV_OV		   ((uint16_t) 4100 )
-#define mV_GNSS_ON     ((uint16_t) 3400 )
-#define mV_GNSS_OFF    ((uint16_t) 3200 )
-#define mV_LCD_OFF     ((uint16_t) 2200 )
-#define mV_LCD_SLOW    ((uint16_t) 2400 )
-#define mV_LCD_FAST    ((uint16_t) 3200 )
+#define mV_GNSS_ON     ((uint16_t) 3500 )
+#define mV_GNSS_OFF    ((uint16_t) 3000 )
+#define mV_LCD_OFF     ((uint16_t) 2600 )
+#define mV_LCD_SLOW    ((uint16_t) 3000 )
+#define mV_LCD_FAST    ((uint16_t) 3300 )
 
 typedef enum {
 	WKUP_CLEAR, WKUP_LPUART, WKUP_RTC, WKUP_EXTIO, WKUP_ADC

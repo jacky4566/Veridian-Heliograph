@@ -8,8 +8,6 @@
 #include "main.h"
 #include "math.h"
 #include "myApp.h"
-#include <time.h>
-#include <stdbool.h>
 #include "UBXDATA.h"
 #include "LS013B7DH03.h"
 #include <Fonts/FreeSans9pt7bMod.h>
@@ -42,7 +40,8 @@ static void startADC();
 //Variable
 volatile bool ADCrunning;
 volatile uint32_t superCapmV;
-volatile int32_t tempC;
+volatile int tempC;
+volatile int ADCtempCalibrate = 0;
 volatile static uint16_t ADC_raw[adc_Channels];
 volatile uint32_t guiTimer;
 wakeUpSource lastWakeUpSource;
@@ -200,7 +199,10 @@ static void startADC() {
 	}
 
 	ADCrunning = true;
-	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+	if (abs(tempC - ADCtempCalibrate) >= 10){ //Re-calibrate every 10 degree swing.
+		HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+		ADCtempCalibrate = tempC;
+	}
 	HAL_ADC_Start_DMA(&hadc1, (uint32_t*) ADC_raw, adc_Channels);
 }
 
