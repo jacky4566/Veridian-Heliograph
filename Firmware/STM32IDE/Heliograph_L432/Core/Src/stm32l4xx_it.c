@@ -213,7 +213,7 @@ void RTC_WKUP_IRQHandler(void)
   /* USER CODE END RTC_WKUP_IRQn 0 */
   HAL_RTCEx_WakeUpTimerIRQHandler(&hrtc);
   /* USER CODE BEGIN RTC_WKUP_IRQn 1 */
-
+  lastWakeUpSource = WKUP_RTC;
   /* USER CODE END RTC_WKUP_IRQn 1 */
 }
 
@@ -227,7 +227,7 @@ void DMA1_Channel1_IRQHandler(void)
   /* USER CODE END DMA1_Channel1_IRQn 0 */
   HAL_DMA_IRQHandler(&hdma_adc1);
   /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
-  lastWakeUpSource = WKUP_RTC;
+
   /* USER CODE END DMA1_Channel1_IRQn 1 */
 }
 

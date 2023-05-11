@@ -72,7 +72,7 @@ void myApp_init() {
 
 void myApp_loop() {
 	startADC();
-	//GNSS_Power();
+	GNSS_Power();
 	if (LCD_Power() == LCD_READY) {
 		drawHeader();
 		drawGNSS();
@@ -92,7 +92,7 @@ static void goToIdle() {
 
 static void goToSleep() {
 	if (superCapmV < mV_OV) {
-		//HAL_GPIO_WritePin(SolarEN_GPIO_Port, SolarEN_Pin, GPIO_PIN_SET); //Allow charging
+		HAL_GPIO_WritePin(SolarEN_GPIO_Port, SolarEN_Pin, GPIO_PIN_SET); //Allow charging
 		GNSS_Prep_Stop();
 		HAL_SuspendTick();
 		do {
@@ -103,7 +103,8 @@ static void goToSleep() {
 		LL_LPUART_DisableIT_WKUP(LPUART1);
 		HAL_ResumeTick();
 	} else {
-		//HAL_GPIO_WritePin(SolarEN_GPIO_Port, SolarEN_Pin, GPIO_PIN_RESET); //disable charging
+		//Battery is charged
+		HAL_GPIO_WritePin(SolarEN_GPIO_Port, SolarEN_Pin, GPIO_PIN_RESET); //disable charging
 	}
 }
 

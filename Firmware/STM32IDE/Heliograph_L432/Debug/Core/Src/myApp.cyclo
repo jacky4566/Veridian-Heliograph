@@ -17,10 +17,10 @@ myApp.c:51:6:myApp_init	2
 myApp.c:73:6:myApp_loop	4
 myApp.c:89:13:goToIdle	1
 myApp.c:93:13:goToSleep	3
-myApp.c:110:13:drawHeader	3
-myApp.c:131:13:printDateTime	1
-myApp.c:142:13:drawGNSS	7
-myApp.c:180:6:setTimeGNSS	1
-myApp.c:195:13:startADC	2
-myApp.c:206:6:HAL_ADC_ConvCpltCallback	1
-myApp.c:220:6:HAL_RTCEx_WakeUpTimerEventCallback	1
+myApp.c:111:13:drawHeader	3
+myApp.c:132:13:printDateTime	1
+myApp.c:143:13:drawGNSS	7
+myApp.c:181:6:setTimeGNSS	1
+myApp.c:196:13:startADC	2
+myApp.c:207:6:HAL_ADC_ConvCpltCallback	1
+myApp.c:221:6:HAL_RTCEx_WakeUpTimerEventCallback	1

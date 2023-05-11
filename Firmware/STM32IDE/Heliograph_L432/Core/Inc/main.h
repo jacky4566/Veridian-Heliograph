@@ -64,7 +64,8 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+void USER_LPUART1_UART_Init();
+void USER_LPUART1_UART_DeInit();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

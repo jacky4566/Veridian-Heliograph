@@ -74,7 +74,7 @@ struct {
 void parse(uint8_t byte_read);
 void GNSS_Sleep();
 void GNSS_Config();
-uint16_t Checksum(uint8_t *data, uint16_t len);
+uint16_t Checksum(volatile uint8_t *data, uint16_t len);
 static void GNSS_Set_Power(enum GNSS_rate);
 static void LPUART_Transmit(uint8_t *pData, uint16_t Size, uint32_t Timeout);
 
@@ -141,6 +141,9 @@ bool isTimeFullyResolved() {
 }
 
 void GNSS_Prep_Stop() {
+	if (!LL_LPUART_IsEnabled(LPUART1)){
+		return;
+	}
 	while (LL_LPUART_IsActiveFlag_RXNE(LPUART1)) { //Empty RX buffer
 		parse(LL_LPUART_ReceiveData8(LPUART1));
 	}
@@ -181,12 +184,14 @@ static void GNSS_Set_Power(enum GNSS_rate newRate) {
 	}
 	if (newRate == GNSS_ON) {
 		//Run
+		USER_LPUART1_UART_Init();
 		GNSS_Config();
 		GNSSlastRate = GNSS_ON;
 	} else {
 		//Assume GNSS_STOP
 		GNSSAlive = false;
 		GNSS_Sleep();
+		USER_LPUART1_UART_DeInit();
 		GNSSlastRate = GNSS_STOP;
 	}
 }
@@ -210,12 +215,11 @@ void GNSS_Config() {
 }
 
 void GNSS_Sleep() {
-	LPUART_Transmit((uint8_t*) &UBX_CFG_PWR_STNBY, sizeof(UBX_CFG_PWR_STNBY), HAL_MAX_DELAY);
 	HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_RESET);
 }
 
 //Parsing
-uint16_t Checksum(uint8_t *data, uint16_t len) {
+uint16_t Checksum(volatile uint8_t *data, uint16_t len) {
 	if (!data) {
 		return 0;
 	}
@@ -281,7 +285,7 @@ void parse(uint8_t byte_read) {
 		uint16_t computed_checksum = Checksum(pvt_buffer_, msg_len_ + UBX_HEADER_LEN_);
 		if (computed_checksum == received_checksum) {
 			if (pvt_buffer_[20 + UBX_PAYLOAD_OFFSET_] >= FIX_2D) {
-				memcpy(&ubx_nav_pvt, pvt_buffer_ + UBX_PAYLOAD_OFFSET_, UBX_PVT_LEN_);
+				memcpy(&ubx_nav_pvt, (void*)  pvt_buffer_ + UBX_PAYLOAD_OFFSET_, UBX_PVT_LEN_);
 				GNSSlastPacketAge = 0;
 				if (isTimeFullyResolved()) {
 					setTimeGNSS();

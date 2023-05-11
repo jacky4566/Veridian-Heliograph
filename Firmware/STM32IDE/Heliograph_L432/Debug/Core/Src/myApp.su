@@ -17,10 +17,10 @@
 ../Core/Src/myApp.c:73:6:myApp_loop	8	static
 ../Core/Src/myApp.c:89:13:goToIdle	8	static
 ../Core/Src/myApp.c:93:13:goToSleep	8	static
-../Core/Src/myApp.c:110:13:drawHeader	16	static
-../Core/Src/myApp.c:131:13:printDateTime	40	static
-../Core/Src/myApp.c:142:13:drawGNSS	24	static
-../Core/Src/myApp.c:180:6:setTimeGNSS	32	static
-../Core/Src/myApp.c:195:13:startADC	8	static
-../Core/Src/myApp.c:206:6:HAL_ADC_ConvCpltCallback	24	static
-../Core/Src/myApp.c:220:6:HAL_RTCEx_WakeUpTimerEventCallback	16	static
+../Core/Src/myApp.c:111:13:drawHeader	16	static
+../Core/Src/myApp.c:132:13:printDateTime	40	static
+../Core/Src/myApp.c:143:13:drawGNSS	24	static
+../Core/Src/myApp.c:181:6:setTimeGNSS	32	static
+../Core/Src/myApp.c:196:13:startADC	8	static
+../Core/Src/myApp.c:207:6:HAL_ADC_ConvCpltCallback	24	static
+../Core/Src/myApp.c:221:6:HAL_RTCEx_WakeUpTimerEventCallback	16	static
