@@ -17,7 +17,7 @@ enum GNSS_FixType{
 };
 
 enum GNSS_rate{
-	GNSS_UINT, GNSS_STOP, GNSS_ON
+	GNSS_UINT, GNSS_STOP, GNSS_SLOW, GNSS_FAST
 };
 
 extern volatile uint32_t GNSSlastPacketAge;
@@ -43,8 +43,8 @@ uint8_t GNSS_getSec();
 float getLat();
 float getLong();
 float getHAcc();
-uint8_t getGroundSpeed_kph();
-uint8_t getMotionHeading_deg();
+int getGroundSpeed_kph();
+int getMotionHeading_deg();
 
 //Status
 uint8_t getNumSatellites();

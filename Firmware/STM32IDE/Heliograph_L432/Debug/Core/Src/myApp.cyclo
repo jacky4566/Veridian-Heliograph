@@ -17,7 +17,7 @@ myApp.c:50:6:myApp_init	2
 myApp.c:72:6:myApp_loop	4
 myApp.c:88:13:goToIdle	1
 myApp.c:92:13:goToSleep	3
-myApp.c:110:13:drawHeader	3
+myApp.c:110:13:drawHeader	4
 myApp.c:131:13:printDateTime	1
 myApp.c:142:13:drawGNSS	7
 myApp.c:180:6:setTimeGNSS	1

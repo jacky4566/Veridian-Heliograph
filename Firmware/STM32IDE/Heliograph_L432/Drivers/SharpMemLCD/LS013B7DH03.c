@@ -60,6 +60,8 @@ lcd_State_enum LCD_Power() {
 			lcd_state = LCD_READY;
 		} else if (guiTimer >= LCD_RATE_SLOW) {
 			lcd_state = LCD_READY;
+		} else if (GNSSNewData) {
+			lcd_state = LCD_READY;
 		}
 		break;
 	case LCD_READY:

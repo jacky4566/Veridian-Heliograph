@@ -118,7 +118,7 @@ static void drawHeader() {
 	lcd_SetCursor(94, (LCD_row_Height * 2) - 2);
 	lcd_print(npf_snprintf(strbuffer, strbufferSize, "%.2dC", (int) tempC));
 	//GNSS Status
-	if (GNSSlastRate == GNSS_ON) {
+	if ((GNSSlastRate == GNSS_SLOW) || (GNSSlastRate == GNSS_FAST)) {
 		lcd_drawLine(0, 0, 0, 15, LCD_BLACK);
 	}
 	if (GNSSAlive) {
