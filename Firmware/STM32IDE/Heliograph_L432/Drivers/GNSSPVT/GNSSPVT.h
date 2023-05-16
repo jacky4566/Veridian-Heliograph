@@ -17,10 +17,11 @@ enum GNSS_FixType{
 };
 
 enum GNSS_rate{
-	GNSS_UINT, GNSS_STOP, GNSS_SLOW, GNSS_FAST
+	GNSS_UINT, GNSS_STOP, GNSS_ON
 };
 
 extern volatile uint32_t GNSSlastPacketAge;
+extern volatile uint32_t GNSSOnTime;
 extern volatile bool GNSSAlive;
 extern volatile bool GNSSNewData;
 extern volatile enum GNSS_rate GNSSlastRate;
@@ -48,10 +49,12 @@ int getMotionHeading_deg();
 
 //Status
 uint8_t getNumSatellites();
+uint8_t psmState();
 enum GNSS_FixType getFixType();
 bool isGnssFixOk();
 bool isTimeFullyResolved();
 
+void LPUART_Transmit(uint8_t *pData, uint16_t Size, uint32_t Timeout);
 void LPUART_CharReception_Callback();
 
 #endif

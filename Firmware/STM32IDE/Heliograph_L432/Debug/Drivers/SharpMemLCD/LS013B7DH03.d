@@ -40,8 +40,8 @@ Drivers/SharpMemLCD/LS013B7DH03.o: ../Drivers/SharpMemLCD/LS013B7DH03.c \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_gpio.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_dma.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_exti.h \
- ../Core/Inc/myApp.h ../Drivers/SharpMemLCD/ls013b7dh03.h \
- ../Drivers/SharpMemLCD/gfxfont.h
+ ../Core/Inc/myApp.h ../Drivers/GNSSPVT/GNSSPVT.h \
+ ../Drivers/SharpMemLCD/ls013b7dh03.h ../Drivers/SharpMemLCD/gfxfont.h
 ../Core/Inc/main.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
@@ -85,5 +85,6 @@ Drivers/SharpMemLCD/LS013B7DH03.o: ../Drivers/SharpMemLCD/LS013B7DH03.c \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_dma.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_exti.h:
 ../Core/Inc/myApp.h:
+../Drivers/GNSSPVT/GNSSPVT.h:
 ../Drivers/SharpMemLCD/ls013b7dh03.h:
 ../Drivers/SharpMemLCD/gfxfont.h:

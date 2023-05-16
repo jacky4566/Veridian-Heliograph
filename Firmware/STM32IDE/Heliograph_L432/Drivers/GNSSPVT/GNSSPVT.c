@@ -27,6 +27,8 @@ const uint8_t UBX_NAV_CLASS_ = 0x01;
 const uint8_t UBX_NAV_PVT = 0x07;
 const uint8_t UBX_PVT_LEN_ = 92;
 volatile uint32_t GNSSlastPacketAge;
+volatile uint32_t GNSSOnTime = 0;
+;
 volatile bool GNSSAlive;
 volatile bool GNSSNewData = true;
 volatile uint16_t parser_pos_ = 0;
@@ -72,11 +74,9 @@ struct {
 
 //Private functions
 void parse(uint8_t byte_read);
-void GNSS_Config_Slow();
-void GNSS_Config_Fast();
+void GNSS_Config();
 uint16_t Checksum(volatile uint8_t *data, uint16_t len);
 static void GNSS_Set_Power(enum GNSS_rate);
-static void LPUART_Transmit(uint8_t *pData, uint16_t Size, uint32_t Timeout);
 
 //Functions
 //Time
@@ -109,7 +109,7 @@ float getLong() {
 }
 
 float getHAcc() {
-	return (float) ubx_nav_pvt.hacc * 1e-3;
+	return ((float) ubx_nav_pvt.hacc) * 1e-3;
 }
 
 int getGroundSpeed_kph() {
@@ -130,6 +130,10 @@ enum GNSS_FixType getFixType() {
 
 bool isGnssFixOk() {
 	return ubx_nav_pvt.flags & gnssFixOKmask;
+}
+
+uint8_t psmState() {
+	return ((ubx_nav_pvt.flags & 0x1C) >> 2);
 }
 
 bool isTimeFullyResolved() {
@@ -155,25 +159,29 @@ void GNSS_Prep_Stop() {
 void GNSS_Power() {
 	switch (GNSSlastRate) {
 	case GNSS_UINT:
-		GNSS_Set_Power(GNSS_STOP);
+		if (superCapmV >= mV_GNSS_SLOW) {
+			GNSS_Set_Power(GNSS_ON);
+		} else {
+			GNSS_Set_Power(GNSS_STOP);
+		}
 		break;
 	case GNSS_STOP:
-		if (superCapmV >= mV_GNSS_SLOW) {
-			GNSS_Set_Power(GNSS_SLOW);
-		}
-		break;
-	case GNSS_SLOW:
 		if (superCapmV >= mV_GNSS_FAST) {
-			GNSS_Set_Power(GNSS_FAST);
-		} else if (superCapmV < mV_GNSS_OFF) {
-			GNSS_Set_Power(GNSS_STOP);
+			GNSS_Set_Power(GNSS_ON);
+		} else if ((superCapmV >= mV_GNSS_SLOW) && (GNSSlastPacketAge >= (5UL * 60UL))) {
+			GNSS_Set_Power(GNSS_ON);
 		}
 		break;
-	case GNSS_FAST:
+	case GNSS_ON:
 		if (superCapmV < mV_GNSS_OFF) {
+			//Under power
 			GNSS_Set_Power(GNSS_STOP);
-		} else if (superCapmV < mV_GNSS_SLOW) {
-			GNSS_Set_Power(GNSS_SLOW);
+		} else if ((superCapmV < mV_GNSS_FAST) && (getFixType() >= 3) && (GNSSlastPacketAge < 2)) {
+			//Have a 3d fix
+			GNSS_Set_Power(GNSS_STOP);
+		} else if ((superCapmV < mV_GNSS_FAST) && (GNSSOnTime >= 60)) {
+			//Timeout
+			GNSS_Set_Power(GNSS_STOP);
 		}
 		break;
 	}
@@ -183,7 +191,7 @@ static void GNSS_Set_Power(enum GNSS_rate newRate) {
 	if (newRate == GNSSlastRate) {
 		return;
 	}
-	switch (GNSSlastRate) {
+	switch (newRate) {
 	case GNSS_UINT:
 	case GNSS_STOP:
 		GNSSAlive = false;
@@ -191,35 +199,24 @@ static void GNSS_Set_Power(enum GNSS_rate newRate) {
 		USER_LPUART1_UART_DeInit();
 		GNSSlastRate = GNSS_STOP;
 		break;
-	case GNSS_SLOW:
+	case GNSS_ON:
 		USER_LPUART1_UART_Init();
-		GNSS_Config_Slow();
-		GNSSlastRate = GNSS_SLOW;
-		break;
-	case GNSS_FAST:
-		USER_LPUART1_UART_Init();
-		GNSS_Config_Fast();
-		GNSSlastRate = GNSS_SLOW;
+		GNSS_Config();
+		GNSSOnTime = 0;
+		GNSSlastRate = GNSS_ON;
 		break;
 	}
 }
 
-void GNSS_Config_Slow() {
-	if (!HAL_GPIO_ReadPin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin)) {
-		//GNSS was asleep
-		//Wakeup
-		HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_SET);
-		LPUART_Transmit((uint8_t*) 0xff, 1, HAL_MAX_DELAY);
-		HAL_Delay(500);
-		//Enable PVT message
-		LPUART_Transmit((uint8_t*) &UBX_CFG_MSGOUT_UART1, sizeof(UBX_CFG_MSGOUT_UART1), HAL_MAX_DELAY);
-	}
-	//Enable PMOO
-	LPUART_Transmit((uint8_t*) &UBX_CFG_PM_OPERATEMODE_SLOW, sizeof(UBX_CFG_PM_OPERATEMODE_SLOW), HAL_MAX_DELAY);
-}
-
-void GNSS_Config_Fast() {
-	//Run at full speed
+void GNSS_Config() {
+	//GNSS was asleep
+	//Wakeup
+	HAL_GPIO_WritePin(GNSS_EXT_GPIO_Port, GNSS_EXT_Pin, GPIO_PIN_SET);
+	LPUART_Transmit((uint8_t*) 0xff, 1, HAL_MAX_DELAY);
+	HAL_Delay(500);
+	//Enable PVT message
+	LPUART_Transmit((uint8_t*) &UBX_CFG_MSGOUT_UART1, sizeof(UBX_CFG_MSGOUT_UART1), HAL_MAX_DELAY);
+	//Full Power
 	LPUART_Transmit((uint8_t*) &UBX_CFG_PM_OPERATEMODE_FULL, sizeof(UBX_CFG_PM_OPERATEMODE_FULL), HAL_MAX_DELAY);
 }
 
@@ -311,7 +308,7 @@ void LPUART_CharReception_Callback(void) {
 	}
 }
 
-static void LPUART_Transmit(uint8_t *pData, uint16_t Size, uint32_t Timeout) {
+void LPUART_Transmit(uint8_t *pData, uint16_t Size, uint32_t Timeout) {
 	if ((pData == NULL) || (Size == 0U)) {
 		return;
 	}

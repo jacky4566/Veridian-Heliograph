@@ -8,21 +8,21 @@
 		<item key="incremental" value="false"/>
 		<item key="isRegEx" value="false"/>
 		<list key="findhistory">
+			<item value="mV_GNSS_SLOW"/>
 			<item value=" "/>
+			<item value="LPUART_Transmit"/>
+			<item value="LSE"/>
+			<item value="LSI"/>
+			<item value="LLSI"/>
+			<item value="RTC"/>
+			<item value="CDC_Transmit_FS"/>
+			<item value="&lt;&lt;"/>
+			<item value="&gt;&gt;"/>
+			<item value="flags"/>
 			<item value="GNSS_Config"/>
 			<item value="GNSS_Sleep"/>
 			<item value="gspeed"/>
 			<item value="getMotionHeading_deg"/>
-			<item value="headmot"/>
-			<item value="MX_LPUART1_UART_Init"/>
-			<item value="lastWakeUpSource"/>
-			<item value="LCD_SENDING_CLR"/>
-			<item value="lcd_clear"/>
-			<item value="lcd_state"/>
-			<item value="GPIO"/>
-			<item value="ADC_raw"/>
-			<item value="npf_pprintf"/>
-			<item value="LPUART_Transmit"/>
 		</list>
 		<list key="replacehistory">
 			<item value=", 0x"/>
@@ -34,8 +34,8 @@
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
 		<item key="DIALOG_X_ORIGIN" value="961"/>
 		<item key="DIALOG_Y_ORIGIN" value="649"/>
-		<item key="DIALOG_WIDTH" value="322"/>
-		<item key="DIALOG_HEIGHT" value="391"/>
-		<item key="DIALOG_FONT_NAME" value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI"/>
+		<item key="DIALOG_WIDTH" value="367"/>
+		<item key="DIALOG_HEIGHT" value="412"/>
+		<item key="DIALOG_FONT_NAME" value="1|Segoe UI|8.830189|0|WINDOWS|1|-13|0|0|0|400|0|0|0|1|0|0|5|0|Segoe UI"/>
 	</section>
 </section>

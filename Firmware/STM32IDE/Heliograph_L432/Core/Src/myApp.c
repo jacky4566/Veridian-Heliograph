@@ -118,7 +118,7 @@ static void drawHeader() {
 	lcd_SetCursor(94, (LCD_row_Height * 2) - 2);
 	lcd_print(npf_snprintf(strbuffer, strbufferSize, "%.2dC", (int) tempC));
 	//GNSS Status
-	if ((GNSSlastRate == GNSS_SLOW) || (GNSSlastRate == GNSS_FAST)) {
+	if (GNSSlastRate == GNSS_ON) {
 		lcd_drawLine(0, 0, 0, 15, LCD_BLACK);
 	}
 	if (GNSSAlive) {
@@ -199,7 +199,7 @@ static void startADC() {
 	}
 
 	ADCrunning = true;
-	if (abs(tempC - ADCtempCalibrate) >= 10){ //Re-calibrate every 10 degree swing.
+	if (abs(tempC - ADCtempCalibrate) >= 10) { //Re-calibrate every 10 degree swing.
 		HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
 		ADCtempCalibrate = tempC;
 	}
@@ -223,4 +223,5 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc) {
 	guiTimer++;
 	GNSSlastPacketAge++;
+	GNSSOnTime++;
 }

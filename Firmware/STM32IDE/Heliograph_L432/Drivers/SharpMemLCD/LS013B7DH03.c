@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "myApp.h"
+#include "GNSSPVT.h"
 #include "ls013b7dh03.h"
 #include "gfxfont.h"
 
@@ -44,7 +45,7 @@ static uint8_t lcd_writeChar(uint8_t x, uint8_t y, uint8_t c);
 lcd_State_enum LCD_Power() {
 	switch (lcd_state) {
 	case LCD_OFF:
-		if (superCapmV >= mV_LCD_SLOW) {
+		if (superCapmV >= mV_LCD_ON) {
 			//Turn on LCD
 			lcd_state = LCD_READY;
 			//HAL_LPTIM_PWM_Start(&hlptim1, 2047, 1023); //32768 DIV16 DIV2048 1HZ
@@ -56,8 +57,6 @@ lcd_State_enum LCD_Power() {
 		if (superCapmV < mV_LCD_OFF) {
 			lcd_state = LCD_OFF;
 			HAL_GPIO_WritePin(DISP_EN_GPIO_Port, DISP_EN_Pin, GPIO_PIN_RESET);
-		} else if ((superCapmV >= mV_LCD_FAST) && (guiTimer >= LCD_RATE_FAST)) {
-			lcd_state = LCD_READY;
 		} else if (guiTimer >= LCD_RATE_SLOW) {
 			lcd_state = LCD_READY;
 		} else if (GNSSNewData) {
